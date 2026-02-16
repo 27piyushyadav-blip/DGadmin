@@ -1,4 +1,4 @@
-// File: C:\Users\HP\Desktop\isckon sagar new change\p1\New folder (4)\digitaloffices\apps\admin\src\app\admin\organizations\changes\page.tsx
+// File: C:\Users\HP\Desktop\New folder (5)\admin\src\app\admin\organizations\changes\page.tsx
 import * as entry from '../../../../../../src/app/admin/organizations/changes/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 

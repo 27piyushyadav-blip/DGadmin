@@ -1,11 +1,6 @@
 {
+  "/page": "app/page.js",
   "/admin/page": "app/admin/page.js",
-  "/admin/experts/page": "app/admin/experts/page.js",
-  "/admin/bookings/completed/page": "app/admin/bookings/completed/page.js",
-  "/admin/profile/page": "app/admin/profile/page.js",
-  "/admin/notifications/page": "app/admin/notifications/page.js",
-  "/admin/activity/page": "app/admin/activity/page.js",
-  "/admin/billing/page": "app/admin/billing/page.js",
-  "/admin/team/page": "app/admin/team/page.js",
-  "/admin/support/page": "app/admin/support/page.js"
+  "/admin/organizations/changes/page": "app/admin/organizations/changes/page.js",
+  "/admin/organizations/pending/page": "app/admin/organizations/pending/page.js"
 }
