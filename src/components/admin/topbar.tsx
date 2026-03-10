@@ -1,10 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Bell, Search, User, LogOut, X, CheckCircle, AlertTriangle, Info, Calendar, DollarSign, Users } from "lucide-react";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
+import { useAuth } from "@/contexts/auth-context";
 
 interface TopbarProps {
   onSidebarToggle: () => void;
@@ -66,8 +69,21 @@ export function Topbar({ onSidebarToggle }: TopbarProps) {
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [notifications, setNotifications] = useState(mockNotifications);
+  const { logout, user } = useAuth();
+  const router = useRouter();
 
   const unreadCount = notifications.filter(n => !n.read).length;
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      toast.success("Logged out successfully");
+      router.push("/login");
+    } catch (error) {
+      toast.error("Logout failed");
+    }
+    setIsProfileOpen(false);
+  };
 
   const markAsRead = (id: string) => {
     setNotifications(prev =>
@@ -237,8 +253,8 @@ export function Topbar({ onSidebarToggle }: TopbarProps) {
                 onClick={() => setIsProfileOpen(!isProfileOpen)}
               >
                 <div className="text-right">
-                  <p className="text-sm font-medium text-foreground">Admin User</p>
-                  <p className="text-xs text-muted-foreground">admin@digitaloffices.com</p>
+                  <p className="text-sm font-medium text-foreground">{user?.email || "Admin User"}</p>
+                  <p className="text-xs text-muted-foreground">{user?.email || "admin@digitaloffices.com"}</p>
                 </div>
                 <div className="h-8 w-8 bg-primary rounded-full flex items-center justify-center">
                   <User className="h-4 w-4 text-primary-foreground" />
@@ -254,8 +270,8 @@ export function Topbar({ onSidebarToggle }: TopbarProps) {
                         <User className="h-5 w-5 text-primary-foreground" />
                       </div>
                       <div>
-                        <p className="font-medium text-foreground">Admin User</p>
-                        <p className="text-xs text-muted-foreground">admin@digitaloffices.com</p>
+                        <p className="font-medium text-foreground">{user?.email || "Admin User"}</p>
+                        <p className="text-xs text-muted-foreground">{user?.email || "admin@digitaloffices.com"}</p>
                         <p className="text-xs text-primary mt-1">Super Admin</p>
                       </div>
                     </div>
@@ -306,7 +322,10 @@ export function Topbar({ onSidebarToggle }: TopbarProps) {
                       <span>Help & Support</span>
                     </Link>
                     <div className="border-t border-border my-2"></div>
-                    <button className="w-full px-4 py-2 text-left text-sm hover:bg-accent transition-colors flex items-center gap-3 text-red-600">
+                    <button 
+                      onClick={handleLogout}
+                      className="w-full px-4 py-2 text-left text-sm hover:bg-accent transition-colors flex items-center gap-3 text-red-600"
+                    >
                       <LogOut className="h-4 w-4" />
                       <span>Sign Out</span>
                     </button>

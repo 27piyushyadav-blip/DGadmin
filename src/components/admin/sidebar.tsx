@@ -108,16 +108,12 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
 
   const toggleExpanded = (itemId: string) => {
     setExpandedItems(prev =>
-      prev.includes(itemId)
-        ? prev.filter(id => id !== itemId)
-        : [...prev, itemId]
+      prev.includes(itemId) ? prev.filter(id => id !== itemId) : [...prev, itemId]
     );
   };
 
   const isActive = (href: string) => {
-    if (href === "/admin") {
-      return pathname === href;
-    }
+    if (href === "/admin") return pathname === href;
     return pathname.startsWith(href);
   };
 
@@ -137,7 +133,7 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
             level > 0 && "pl-6",
             !isOpen && "justify-center px-2"
           )}
-          onClick={(e) => {
+          onClick={(e: any) => {
             if (hasChildren) {
               e.preventDefault();
               toggleExpanded(item.id);
@@ -146,13 +142,16 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
           title={!isOpen ? item.label : undefined}
         >
           {Icon && <Icon className="h-4 w-4 flex-shrink-0" />}
-          {isOpen && (
-            <span className="flex-1 truncate">{item.label}</span>
-          )}
+          {isOpen && <span className="flex-1 truncate">{item.label}</span>}
           {isOpen && hasChildren && (
-            isExpanded ? <ChevronDown className="h-4 w-4 flex-shrink-0" /> : <ChevronRight className="h-4 w-4 flex-shrink-0" />
+            isExpanded ? (
+              <ChevronDown className="h-4 w-4 flex-shrink-0" />
+            ) : (
+              <ChevronRight className="h-4 w-4 flex-shrink-0" />
+            )
           )}
         </Link>
+
         {isOpen && hasChildren && isExpanded && (
           <div className="mt-1 space-y-1">
             {item.children.map((child: any) => renderMenuItem(child, level + 1))}
@@ -163,29 +162,31 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
   };
 
   return (
-    <div className={cn(
-      "fixed left-0 top-0 h-full bg-card border-r border-border transition-all duration-300 z-50 flex flex-col",
-      isOpen ? "w-64" : "w-16"
-    )}>
-      <div className="p-4 border-b border-border flex-shrink-0">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={onToggle}
-            className="p-2 rounded-lg hover:bg-accent transition-colors flex-shrink-0"
-          >
-            {isOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
-          </button>
-          {isOpen && (
-            <h1 className="text-lg font-semibold text-foreground truncate">
-              Admin Panel
-            </h1>
-          )}
-        </div>
-      </div>
+    <>
+      {isOpen && (
+        <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={onToggle} />
+      )}
 
-      <nav className="flex-1 p-4 space-y-2 overflow-y-auto scrollbar-thin overflow-x-hidden">
-        {menuItems.map(item => renderMenuItem(item))}
-      </nav>
-    </div>
+      <aside
+        className={cn(
+          "fixed top-0 left-0 h-full bg-card border-r border-border transition-transform duration-300 z-50 flex flex-col",
+          isOpen ? "translate-x-0 w-64" : "-translate-x-full lg:translate-x-0 lg:w-16"
+        )}
+      >
+        <div className="p-4 border-b border-border flex-shrink-0">
+          <div className="flex items-center gap-3">
+            <button onClick={onToggle} className="p-2 rounded-lg hover:bg-accent transition-colors flex-shrink-0">
+              {isOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+            </button>
+
+            {isOpen && <h1 className="text-lg font-semibold text-foreground truncate">Admin Panel</h1>}
+          </div>
+        </div>
+
+        <nav className="flex-1 p-4 space-y-2 overflow-y-auto scrollbar-thin overflow-x-hidden">
+          {menuItems.map((item) => renderMenuItem(item))}
+        </nav>
+      </aside>
+    </>
   );
 }
