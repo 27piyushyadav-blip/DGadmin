@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2, CheckCircle, XCircle, Shield } from "lucide-react";
 import { toast } from "sonner";
 import { verifyEmailApi, AuthError } from "@/client/api/auth";
 
-export default function VerifyPage() {
+function VerifyContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
@@ -36,14 +36,12 @@ export default function VerifyPage() {
         }, 2000);
       } catch (error) {
         if (error instanceof AuthError) {
-          // Check if it's a "already verified" or token used error
           if (error.message.includes("already verified") || error.statusCode === 400) {
             setStatus("success");
             setMessage("Your email is already verified! You can now login.");
             toast.success("Email verified!", {
               description: "Your admin account is ready to use.",
             });
-            // Redirect to login page after 2 seconds
             setTimeout(() => {
               router.push("/login");
             }, 2000);
@@ -152,5 +150,20 @@ export default function VerifyPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function VerifyPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-dvh w-full items-center justify-center bg-white">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
+          <p className="text-zinc-600">Loading verification...</p>
+        </div>
+      </div>
+    }>
+      <VerifyContent />
+    </Suspense>
   );
 }
