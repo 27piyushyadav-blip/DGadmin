@@ -36,7 +36,7 @@ function VerifyContent() {
         }, 2000);
       } catch (error) {
         if (error instanceof AuthError) {
-          if (error.message.includes("already verified") || error.statusCode === 400) {
+          if (error?.message?.includes("already verified") || error.statusCode === 400) {
             setStatus("success");
             setMessage("Your email is already verified! You can now login.");
             toast.success("Email verified!", {
@@ -47,9 +47,9 @@ function VerifyContent() {
             }, 2000);
           } else {
             setStatus("error");
-            setMessage(error.message);
+            setMessage(error?.message || "Verification failed");
             toast.error("Verification failed", {
-              description: error.message,
+              description: error?.message || "Please check your link",
             });
           }
         } else {

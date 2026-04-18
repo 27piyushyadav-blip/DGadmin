@@ -96,7 +96,7 @@ async function handleResponse<T>(response: Response): Promise<T> {
 
   if (!response.ok) {
     throw new ApiError(
-      data.message || data.error || "Request failed",
+      data?.message || data?.error || "Request failed",
       response.status,
       data
     );

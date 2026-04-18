@@ -49,15 +49,15 @@ const LoginForm: React.FC = () => {
       if (err instanceof AuthError) {
         switch (err.statusCode) {
           case 401:
-            if (err.message.includes("verify")) {
+            if (err?.message?.includes("verify")) {
               toast.error("Please verify your email", {
                 description: "Check your inbox for verification link",
               });
-            } else if (err.message.includes("Google")) {
+            } else if (err?.message?.includes("Google")) {
               toast.error("Google-only account", {
                 description: "Please login using Google",
               });
-            } else if (err.message.includes("suspended")) {
+            } else if (err?.message?.includes("suspended")) {
               toast.error("Account suspended", {
                 description: "Please contact support",
               });
@@ -68,10 +68,10 @@ const LoginForm: React.FC = () => {
             }
             break;
           default:
-            toast.error(err.message || "Login failed");
+            toast.error(err?.message || "Login failed");
         }
       } else {
-        toast.error(err.message || "Something went wrong");
+        toast.error(err?.message || "Something went wrong");
       }
       setLoadingType(null);
     }

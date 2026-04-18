@@ -28,7 +28,7 @@ export function useRegisterForm() {
       toast.success("Signed up with Google");
       router.push("/admin");
     } catch (err: any) {
-      toast.error(err.message || "Google Sign-Up failed");
+      toast.error(err?.message || "Google Sign-Up failed");
       setLoadingType(null);
     }
   }
@@ -47,10 +47,10 @@ export function useRegisterForm() {
         if (err.statusCode === 409) {
           toast.error("Email already registered as admin");
         } else {
-          toast.error(err.message || "Registration failed");
+          toast.error(err?.message || "Registration failed");
         }
       } else {
-        toast.error(err.message || "Something went wrong");
+        toast.error(err?.message || "Something went wrong");
       }
       setLoadingType(null);
     }
