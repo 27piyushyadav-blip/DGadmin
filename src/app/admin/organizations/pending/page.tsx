@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { DataTable } from "@/components/admin/data-table";
 import { Drawer } from "@/components/admin/drawer";
 import { Badge } from "@/components/ui/badge";
-import { Eye, CheckCircle, XCircle, FileText, Building2, Calendar } from "lucide-react";
-import { mockOrganizations } from "@/data/mock-data";
+import { Eye, CheckCircle, XCircle, FileText, Building2, Calendar, Loader2, Video } from "lucide-react";
+import { apiClient } from "@/client/api/api-client";
 import type { TableColumn, Organization } from "@/types/admin";
+import { toast } from "sonner";
 
 const columns: TableColumn<Organization>[] = [
   {
@@ -22,35 +23,77 @@ const columns: TableColumn<Organization>[] = [
     label: "Phone"
   },
   {
-    key: "address",
+    key: "location",
     label: "Address",
     render: (value: string) => (
-      <span className="text-sm truncate max-w-xs">{value}</span>
+      <span className="text-sm truncate max-w-xs">{value || "N/A"}</span>
     )
   },
   {
-    key: "requestDate",
-    label: "Request Date"
+    key: "submittedAt",
+    label: "Request Date",
+    render: (value: any) => new Date(value).toLocaleDateString()
   }
 ];
 
 export default function PendingOrganizationsPage() {
-  const [selectedOrganization, setSelectedOrganization] = useState<Organization | null>(null);
+  const [organizations, setOrganizations] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [selectedOrganization, setSelectedOrganization] = useState<any | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('identity');
 
-  const pendingOrganizations = mockOrganizations.filter(org => org.status === "pending");
+  const fetchPending = async () => {
+    setIsLoading(true);
+    try {
+      const data: any = await apiClient("http://localhost:3000/admin/organizations/pending");
+      setOrganizations(data);
+    } catch (error) {
+      console.error("Failed to fetch pending organizations:", error);
+      toast.error("Failed to load applications");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-  const handleView = (organization: Organization) => {
+  useEffect(() => {
+    fetchPending();
+  }, []);
+
+  const handleView = (organization: any) => {
     setSelectedOrganization(organization);
     setIsDrawerOpen(true);
   };
 
-  const handleApprove = (organization: Organization) => {
-    console.log("Approving organization:", organization.id);
+  const handleApprove = async (organization: any) => {
+    if (!confirm(`Are you sure you want to approve ${organization.name}?`)) return;
+    try {
+      await apiClient(`http://localhost:3000/admin/organizations/${organization.orgId}/approve`, {
+        method: "POST"
+      });
+      toast.success("Organization approved successfully");
+      setIsDrawerOpen(false);
+      fetchPending();
+    } catch (error) {
+      toast.error("Approval failed");
+    }
   };
 
-  const handleReject = (organization: Organization) => {
-    console.log("Rejecting organization:", organization.id);
+  const handleReject = async (organization: any) => {
+    const reason = prompt("Please provide a reason for rejection:");
+    if (reason === null) return;
+    
+    try {
+      await apiClient(`http://localhost:3000/admin/organizations/${organization.orgId}/reject`, {
+        method: "POST",
+        body: JSON.stringify({ reason })
+      });
+      toast.success("Organization rejected");
+      setIsDrawerOpen(false);
+      fetchPending();
+    } catch (error) {
+      toast.error("Rejection failed");
+    }
   };
 
   const renderActions = (organization: Organization) => (
@@ -95,7 +138,7 @@ export default function PendingOrganizationsPage() {
               <FileText className="h-6 w-6 text-yellow-600" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-foreground">{pendingOrganizations.length}</p>
+              <p className="text-2xl font-bold text-foreground">{organizations.length}</p>
               <p className="text-sm text-muted-foreground">Pending Verification</p>
             </div>
           </div>
@@ -124,140 +167,354 @@ export default function PendingOrganizationsPage() {
         </div>
       </div>
 
-      <DataTable
-        data={pendingOrganizations}
-        columns={columns}
-        actions={renderActions}
-      />
+      {isLoading ? (
+        <div className="flex h-[400px] items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      ) : (
+        <DataTable
+          data={organizations}
+          columns={columns}
+          actions={renderActions}
+        />
+      )}
 
       {/* Organization Details Drawer */}
       <Drawer
         isOpen={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
-        title="Organization Details"
-        size="lg"
+        title="Organization Verification Profile"
+        size="xl"
       >
         {selectedOrganization && (
-          <div className="space-y-6">
-            {/* Basic Information */}
-            <div>
-              <h3 className="text-lg font-semibold text-foreground mb-4">Basic Information</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-muted-foreground">Organization Name</p>
-                  <p className="font-medium">{selectedOrganization.name}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Email</p>
-                  <p className="font-medium">{selectedOrganization.email}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Phone</p>
-                  <p className="font-medium">{selectedOrganization.phone}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Request Date</p>
-                  <p className="font-medium">{selectedOrganization.requestDate}</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Address */}
-            <div>
-              <h3 className="text-lg font-semibold text-foreground mb-4">Address</h3>
-              <div className="bg-muted rounded-lg p-4">
-                <p className="font-medium">{selectedOrganization.address}</p>
-              </div>
-            </div>
-
-            {/* Description */}
-            <div>
-              <h3 className="text-lg font-semibold text-foreground mb-4">Description</h3>
-              <div className="bg-muted rounded-lg p-4">
-                <p className="text-sm">{selectedOrganization.description}</p>
-              </div>
-            </div>
-
-            {/* Documents */}
-            <div>
-              <h3 className="text-lg font-semibold text-foreground mb-4">Uploaded Documents</h3>
-              <div className="space-y-3">
-                {selectedOrganization.documents.map((doc) => (
-                  <div key={doc.id} className="flex items-center justify-between p-3 border border-border rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <FileText className="h-4 w-4 text-muted-foreground" />
-                      <div>
-                        <p className="font-medium text-sm">{doc.name}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {doc.type} • Uploaded on {doc.uploadedAt}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-800">
-                        Pending Review
-                      </Badge>
-                      <button
-                        className="text-sm text-primary hover:underline"
-                        onClick={() => console.log("View document:", doc.url)}
-                      >
-                        View
-                      </button>
-                    </div>
+          <div className="flex h-full flex-col">
+            {/* Header & Tabs Area */}
+            <div className="shrink-0 space-y-6 pb-4 border-b border-border">
+              {/* Logo and Header Cover Box */}
+              <div className="relative h-40 w-full bg-muted rounded-xl border border-border overflow-hidden">
+                {selectedOrganization.coverImageUrl ? (
+                   <img src={selectedOrganization.coverImageUrl} alt="Cover" className="w-full h-full object-cover" />
+                ) : (
+                   <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-primary/5" />
+                )}
+                <div className="absolute -bottom-6 left-6 p-1 bg-background rounded-lg border shadow-sm">
+                  <div className="w-24 h-24 rounded-md bg-muted flex items-center justify-center overflow-hidden">
+                    {selectedOrganization.logo ? (
+                      <img src={selectedOrganization.logo} alt="Logo" className="w-full h-full object-cover" />
+                    ) : (
+                      <Building2 className="w-12 h-12 text-muted-foreground" />
+                    )}
                   </div>
+                </div>
+              </div>
+
+              <div className="pt-8 flex justify-between items-start">
+                <div>
+                  <h1 className="text-3xl font-bold">{selectedOrganization.name}</h1>
+                  <p className="text-sm text-muted-foreground">
+                    {selectedOrganization.category || selectedOrganization.industry || "General Industry"} 
+                    {selectedOrganization.tagline && ` • ${selectedOrganization.tagline}`}
+                  </p>
+                </div>
+                <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 px-3 py-1 text-sm">
+                  Pending Verification
+                </Badge>
+              </div>
+
+              {/* Tabs */}
+              <div className="flex border-b border-border gap-6">
+                {[
+                  { id: 'identity', label: 'Identity & Brand' },
+                  { id: 'contact', label: 'Contact & Location' },
+                  { id: 'services', label: 'Services' },
+                  { id: 'legal', label: 'Legal & Bank' },
+                ].map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`pb-3 text-sm font-medium transition-colors border-b-2 ${
+                      activeTab === tab.id 
+                        ? 'border-primary text-primary' 
+                        : 'border-transparent text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
                 ))}
               </div>
             </div>
 
-            {/* Verification Checklist */}
-            <div>
-              <h3 className="text-lg font-semibold text-foreground mb-4">Verification Checklist</h3>
-              <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <div className="h-5 w-5 rounded-full border-2 border-green-500 bg-green-500 flex items-center justify-center">
-                    <div className="h-2 w-2 bg-white rounded-full"></div>
+            {/* Scrollable Tab Content */}
+            <div className="flex-1 overflow-y-auto py-6 space-y-8 pr-2">
+              
+              {/* TAB 1: IDENTITY */}
+              {activeTab === 'identity' && (
+                <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
+                  <div className="grid grid-cols-2 gap-6">
+                    <div className="bg-muted/30 p-4 rounded-lg border">
+                      <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Organization Name</p>
+                      <p className="font-medium text-lg">{selectedOrganization.name}</p>
+                    </div>
+                    <div className="bg-muted/30 p-4 rounded-lg border">
+                      <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Subdomain</p>
+                      <p className="font-medium text-lg">{selectedOrganization.subdomain || 'N/A'}</p>
+                    </div>
                   </div>
-                  <span className="text-sm">Business license verified</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="h-5 w-5 rounded-full border-2 border-green-500 bg-green-500 flex items-center justify-center">
-                    <div className="h-2 w-2 bg-white rounded-full"></div>
+
+                  <div>
+                    <h3 className="text-lg font-semibold text-foreground mb-3">About the Organization</h3>
+                    <div className="bg-muted/10 rounded-lg p-5 border text-sm leading-relaxed">
+                      {selectedOrganization.aboutUs || selectedOrganization.description || "No description provided."}
+                    </div>
                   </div>
-                  <span className="text-sm">Address confirmed</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="h-5 w-5 rounded-full border-2 border-yellow-500 bg-yellow-500 flex items-center justify-center">
-                    <div className="h-2 w-2 bg-white rounded-full"></div>
+
+                  <div>
+                    <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
+                      <Video className="w-5 h-5 text-primary" />
+                      Intro/Campaign Video
+                    </h3>
+                    {selectedOrganization.introVideo ? (
+                      <div className="relative max-w-2xl aspect-video rounded-xl border border-border overflow-hidden bg-black">
+                        <video src={selectedOrganization.introVideo} className="w-full h-full object-contain" controls />
+                      </div>
+                    ) : (
+                      <div className="aspect-video max-w-2xl rounded-xl bg-muted/20 flex flex-col items-center justify-center border-2 border-dashed border-border text-muted-foreground">
+                        <Video className="w-8 h-8 mb-2 opacity-50" />
+                        <p className="text-sm">No intro video uploaded</p>
+                      </div>
+                    )}
                   </div>
-                  <span className="text-sm">Insurance certificate pending</span>
                 </div>
-                <div className="flex items-center gap-3">
-                  <div className="h-5 w-5 rounded-full border-2 border-gray-300 flex items-center justify-center">
-                    <div className="h-2 w-2 bg-white rounded-full"></div>
+              )}
+
+              {/* TAB 2: CONTACT & LOCATION */}
+              {activeTab === 'contact' && (
+                <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
+                  <div>
+                    <h3 className="text-lg font-semibold text-foreground mb-4">Contact Information</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="p-4 border rounded-lg bg-muted/10">
+                        <p className="text-xs text-muted-foreground uppercase">Official/Public Email</p>
+                        <p className="font-medium">{selectedOrganization.officialEmail || selectedOrganization.email || "N/A"}</p>
+                      </div>
+                      <div className="p-4 border rounded-lg bg-muted/10">
+                        <p className="text-xs text-muted-foreground uppercase">Phone Number</p>
+                        <p className="font-medium">{selectedOrganization.phoneNumber || selectedOrganization.phone || "N/A"}</p>
+                      </div>
+                      <div className="p-4 border rounded-lg bg-muted/10 col-span-2">
+                        <p className="text-xs text-muted-foreground uppercase">Website URL</p>
+                        <p className="font-medium text-primary hover:underline cursor-pointer">
+                          {selectedOrganization.websiteUrl || selectedOrganization.website || "N/A"}
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                  <span className="text-sm">Tax documents not provided</span>
+
+                  <div>
+                    <h3 className="text-lg font-semibold text-foreground mb-4">Location Details</h3>
+                    <div className="p-4 border rounded-lg bg-muted/10 space-y-4">
+                      <div className="flex items-center gap-2 pb-2 border-b">
+                         <span className="font-medium">Physical Office:</span>
+                         <Badge variant={selectedOrganization.isPhysicalOffice ? "default" : "secondary"}>
+                           {selectedOrganization.isPhysicalOffice ? "Yes" : "No / Virtual Only"}
+                         </Badge>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="col-span-2">
+                          <p className="text-xs text-muted-foreground uppercase">Address Line 1</p>
+                          <p className="font-medium">{selectedOrganization.addressLine1 || selectedOrganization.location || "N/A"}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground uppercase">City</p>
+                          <p className="font-medium">{selectedOrganization.city || "N/A"}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground uppercase">State & Zip Code</p>
+                          <p className="font-medium">
+                            {selectedOrganization.state || "N/A"} {selectedOrganization.zipCode ? `- ${selectedOrganization.zipCode}` : ""}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="text-lg font-semibold text-foreground mb-4">Social Links</h3>
+                    <div className="grid grid-cols-3 gap-4">
+                      {['linkedin', 'twitter', 'instagram'].map(platform => {
+                        const link = selectedOrganization.socialLinks?.[platform];
+                        return (
+                          <div key={platform} className="p-3 border rounded-lg text-center bg-muted/10">
+                            <p className="text-xs text-muted-foreground capitalize mb-1">{platform}</p>
+                            {link ? (
+                              <a href={link} target="_blank" rel="noreferrer" className="text-sm text-primary hover:underline truncate block">View Profile</a>
+                            ) : (
+                              <p className="text-sm text-muted-foreground">Not provided</p>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
                 </div>
-              </div>
+              )}
+
+              {/* TAB 3: SERVICES */}
+              {activeTab === 'services' && (
+                <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
+                  <div>
+                    <h3 className="text-lg font-semibold text-foreground mb-4">Service Offerings</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedOrganization.offeredServiceTypes?.length > 0 ? (
+                        selectedOrganization.offeredServiceTypes.map((service: string, idx: number) => (
+                           <Badge key={idx} variant="outline" className="bg-primary/5 text-sm py-1 px-3">
+                             {service}
+                           </Badge>
+                        ))
+                      ) : (
+                        <p className="text-sm text-muted-foreground">No specific services listed</p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-6">
+                    <div className="p-4 border rounded-lg bg-muted/10">
+                      <p className="text-xs text-muted-foreground uppercase">Cancellation Window</p>
+                      <p className="font-medium text-lg mt-1">{selectedOrganization.cancellationWindowHours || 0} Hours</p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="text-lg font-semibold text-foreground mb-3">Booking & Cancellation Policy</h3>
+                    <div className="bg-muted/10 rounded-lg p-5 border text-sm leading-relaxed">
+                      {selectedOrganization.bookingPolicy || "Standard generic policy applied."}
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="text-lg font-semibold text-foreground mb-4">Operating Hours</h3>
+                    <div className="border rounded-lg overflow-hidden">
+                       <table className="w-full text-sm">
+                         <thead className="bg-muted border-b">
+                           <tr>
+                             <th className="text-left font-medium p-3">Day</th>
+                             <th className="text-left font-medium p-3">Status</th>
+                             <th className="text-left font-medium p-3">Hours</th>
+                           </tr>
+                         </thead>
+                         <tbody className="divide-y text-muted-foreground">
+                           {selectedOrganization.operatingHours?.length > 0 ? (
+                             selectedOrganization.operatingHours.map((hours: any, idx: number) => (
+                               <tr key={idx} className="hover:bg-muted/5">
+                                 <td className="p-3 font-medium capitalize text-foreground">{hours.day}</td>
+                                 <td className="p-3">
+                                   {hours.is_closed ? (
+                                      <Badge variant="secondary">Closed</Badge>
+                                   ) : (
+                                      <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-200">Open</Badge>
+                                   )}
+                                 </td>
+                                 <td className="p-3 font-mono text-xs">
+                                   {hours.is_closed ? '-' : `${hours.open} to ${hours.close}`}
+                                 </td>
+                               </tr>
+                             ))
+                           ) : (
+                             <tr><td colSpan={3} className="p-4 text-center">No hours provided</td></tr>
+                           )}
+                         </tbody>
+                       </table>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 4: LEGAL & BANK */}
+              {activeTab === 'legal' && (
+                <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
+                  <div className="grid grid-cols-2 gap-6">
+                    <div className="p-5 border rounded-lg bg-orange-50 dark:bg-orange-950/20 border-orange-200 dark:border-orange-900/30">
+                      <h4 className="text-sm font-semibold text-orange-800 dark:text-orange-400 mb-2">Tax ID / License Number</h4>
+                      <p className="text-xl font-mono text-orange-900 dark:text-orange-300">
+                        {selectedOrganization.taxIdNumber || selectedOrganization.licenseNumber || "MISSING"}
+                      </p>
+                    </div>
+                    {selectedOrganization.businessLicenseUrl && (
+                      <div className="p-5 border rounded-lg flex flex-col justify-center items-start gap-2 bg-muted/10">
+                        <p className="text-xs uppercase text-muted-foreground font-semibold">Business License Document</p>
+                        <a href={selectedOrganization.businessLicenseUrl} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-primary hover:underline text-sm font-medium">
+                          <FileText className="w-5 h-5" /> View Uploaded License
+                        </a>
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <h3 className="text-lg font-semibold text-foreground mb-4">Bank Settlement Details</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="p-4 border rounded-lg bg-muted/10 col-span-2">
+                        <p className="text-xs text-muted-foreground uppercase">Account Name</p>
+                        <p className="font-medium text-lg">{selectedOrganization.bankDetails?.accountName || "N/A"}</p>
+                      </div>
+                      <div className="p-4 border rounded-lg bg-muted/10">
+                        <p className="text-xs text-muted-foreground uppercase">Account Number</p>
+                        <p className="font-medium font-mono tracking-wider">{selectedOrganization.bankDetails?.accountNumber || "N/A"}</p>
+                      </div>
+                      <div className="p-4 border rounded-lg bg-muted/10">
+                        <p className="text-xs text-muted-foreground uppercase">IFSC / Routing Code</p>
+                        <p className="font-medium font-mono uppercase">{selectedOrganization.bankDetails?.ifscCode || "N/A"}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="text-lg font-semibold text-foreground mb-4">Other Attached Documents</h3>
+                    <div className="space-y-3">
+                      {selectedOrganization.documents && selectedOrganization.documents.length > 0 ? (
+                        selectedOrganization.documents.map((doc: any, i: number) => (
+                          <div key={i} className="flex items-center justify-between p-4 border rounded-lg bg-muted/5 hover:bg-muted/10 transition-colors">
+                            <div className="flex items-center gap-4">
+                              <div className="p-2 bg-primary/10 rounded-lg">
+                                <FileText className="h-5 w-5 text-primary" />
+                              </div>
+                              <div>
+                                <p className="font-medium text-sm">{doc.title || doc.name || `Document ${i+1}`}</p>
+                                <p className="text-xs text-muted-foreground">{doc.category || "Verification"}</p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <Badge variant="secondary">Pending Review</Badge>
+                              <a href={doc.url} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-primary hover:underline">View</a>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="p-8 text-center border rounded-lg border-dashed">
+                           <p className="text-sm text-muted-foreground">No additional documents uploaded</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
             </div>
 
-            {/* Action Buttons */}
-            <div className="flex items-center gap-3 pt-4 border-t border-border">
-              <button
-                onClick={() => handleApprove(selectedOrganization)}
-                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
-              >
-                Approve Organization
-              </button>
+            {/* Action Buttons - Fixed at Bottom */}
+            <div className="shrink-0 flex items-center justify-end gap-3 pt-4 border-t border-border mt-auto">
               <button
                 onClick={() => handleReject(selectedOrganization)}
-                className="px-4 py-2 bg-destructive text-destructive-foreground rounded-lg hover:bg-destructive/90 transition-colors"
+                className="px-6 py-2.5 border border-destructive/20 text-destructive bg-destructive/5 rounded-lg hover:bg-destructive/10 font-medium transition-colors"
               >
-                Reject Organization
+                Reject 
               </button>
               <button
-                className="px-4 py-2 border border-border rounded-lg hover:bg-accent transition-colors"
+                onClick={() => handleApprove(selectedOrganization)}
+                className="px-6 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium transition-colors flex items-center gap-2"
               >
-                Request More Info
+                <CheckCircle className="w-4 h-4" />
+                Approve Verification
               </button>
             </div>
           </div>

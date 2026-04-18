@@ -61,7 +61,10 @@ export function DataTable<T extends Record<string, any>>({
           </span>
         );
       case "name":
-        return `${(row as any).userName} with ${(row as any).expertName}`;
+        if ((row as any).userName && (row as any).expertName) {
+          return `${(row as any).userName} with ${(row as any).expertName}`;
+        }
+        return <span className="font-medium text-foreground">{value}</span>;
       case "action":
         return (
           <span className="text-sm text-muted-foreground">

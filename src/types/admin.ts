@@ -24,14 +24,20 @@ export interface Expert {
 
 export interface Organization {
   id: string;
+  orgId?: string;
   name: string;
   email: string;
   phone: string;
   address: string;
+  location?: string;
   description: string;
+  logo?: string;
+  introVideo?: string;
   documents: Document[];
   status: 'pending' | 'verified' | 'rejected';
   createdAt: string;
+  submittedAt?: string;
+  joinedAt?: string;
   requestDate: string;
 }
 
