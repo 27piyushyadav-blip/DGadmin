@@ -25,6 +25,7 @@ type AuthContextType = {
   login: (identifier: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   refreshToken: () => Promise<void>;
+  refreshUser: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -33,27 +34,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  const checkAuth = async () => {
+    try {
+      if (isAuthenticated()) {
+        // User has tokens, consider them authenticated
+        // You might want to validate the token with the backend here
+        setUser({ 
+          id: "authenticated", 
+          email: "admin@example.com" 
+        });
+      }
+    } catch (error) {
+      console.error("Auth check failed:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Check authentication status on mount
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        if (isAuthenticated()) {
-          // User has tokens, consider them authenticated
-          // You might want to validate the token with the backend here
-          setUser({ 
-            id: "authenticated", 
-            email: "admin@example.com" 
-          });
-        }
-      } catch (error) {
-        console.error("Auth check failed:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     checkAuth();
   }, []);
+
+  const refreshUser = async () => {
+    await checkAuth();
+  };
 
   const login = async (identifier: string, password: string) => {
     setIsLoading(true);
@@ -125,6 +130,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     login,
     logout,
     refreshToken,
+    refreshUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

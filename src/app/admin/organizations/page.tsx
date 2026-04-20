@@ -9,6 +9,8 @@ import { apiClient } from "@/client/api/api-client";
 import type { TableColumn, Organization } from "@/types/admin";
 import { toast } from "sonner";
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+
 const columns: TableColumn<Organization>[] = [
   {
     key: "name",
@@ -68,7 +70,7 @@ export default function OrganizationsPage() {
   const fetchOrganizations = async () => {
     setIsLoading(true);
     try {
-      const data: any = await apiClient("http://localhost:3000/admin/organizations");
+      const data: any = await apiClient(`${API_BASE}/admin/organizations`);
       setOrganizations(data.organizations || []);
       setStats({
         total: data.total || 0,
@@ -96,7 +98,7 @@ export default function OrganizationsPage() {
   const handleVerify = async (organization: any) => {
     if (!confirm(`Are you sure you want to approve ${organization.name}?`)) return;
     try {
-      await apiClient(`http://localhost:3000/admin/organizations/${organization.orgId}/approve`, {
+      await apiClient(`${API_BASE}/admin/organizations/${organization.orgId}/approve`, {
         method: "POST"
       });
       toast.success("Organization verified successfully");
@@ -112,7 +114,7 @@ export default function OrganizationsPage() {
     if (reason === null) return;
     
     try {
-      await apiClient(`http://localhost:3000/admin/organizations/${organization.orgId}/reject`, {
+      await apiClient(`${API_BASE}/admin/organizations/${organization.orgId}/reject`, {
         method: "POST",
         body: JSON.stringify({ reason })
       });

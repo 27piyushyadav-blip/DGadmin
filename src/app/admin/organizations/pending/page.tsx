@@ -9,6 +9,8 @@ import { apiClient } from "@/client/api/api-client";
 import type { TableColumn, Organization } from "@/types/admin";
 import { toast } from "sonner";
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+
 const columns: TableColumn<Organization>[] = [
   {
     key: "name",
@@ -46,7 +48,7 @@ export default function PendingOrganizationsPage() {
   const fetchPending = async () => {
     setIsLoading(true);
     try {
-      const data: any = await apiClient("http://localhost:3000/admin/organizations/pending");
+      const data: any = await apiClient(`${API_BASE}/admin/organizations/pending`);
       setOrganizations(data);
     } catch (error) {
       console.error("Failed to fetch pending organizations:", error);
@@ -68,7 +70,7 @@ export default function PendingOrganizationsPage() {
   const handleApprove = async (organization: any) => {
     if (!confirm(`Are you sure you want to approve ${organization.name}?`)) return;
     try {
-      await apiClient(`http://localhost:3000/admin/organizations/${organization.orgId}/approve`, {
+      await apiClient(`${API_BASE}/admin/organizations/${organization.orgId}/approve`, {
         method: "POST"
       });
       toast.success("Organization approved successfully");
@@ -84,7 +86,7 @@ export default function PendingOrganizationsPage() {
     if (reason === null) return;
     
     try {
-      await apiClient(`http://localhost:3000/admin/organizations/${organization.orgId}/reject`, {
+      await apiClient(`${API_BASE}/admin/organizations/${organization.orgId}/reject`, {
         method: "POST",
         body: JSON.stringify({ reason })
       });
