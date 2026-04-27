@@ -528,7 +528,7 @@ export default function OrganizationsPage() {
                 <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
                   <div className="grid grid-cols-2 gap-6">
                     <div className="p-5 border rounded-lg bg-orange-50 dark:bg-orange-950/20 border-orange-200 dark:border-orange-900/30">
-                      <h4 className="text-sm font-semibold text-orange-800 dark:text-orange-400 mb-2">Tax ID / License Number</h4>
+                      <h4 className="text-sm font-semibold text-orange-800 dark:text-orange-400 mb-2">ABN / License Number</h4>
                       <p className="text-xl font-mono text-orange-900 dark:text-orange-300">
                         {selectedOrganization.taxIdNumber || selectedOrganization.licenseNumber || "MISSING"}
                       </p>
@@ -546,17 +546,21 @@ export default function OrganizationsPage() {
                   <div>
                     <h3 className="text-lg font-semibold text-foreground mb-4">Bank Settlement Details</h3>
                     <div className="grid grid-cols-2 gap-4">
-                      <div className="p-4 border rounded-lg bg-muted/10 col-span-2">
+                      <div className="p-4 border rounded-lg bg-muted/10">
+                        <p className="text-xs text-muted-foreground uppercase">Bank Name</p>
+                        <p className="font-medium">{selectedOrganization.bankDetails?.bankName || "N/A"}</p>
+                      </div>
+                      <div className="p-4 border rounded-lg bg-muted/10">
                         <p className="text-xs text-muted-foreground uppercase">Account Name</p>
-                        <p className="font-medium text-lg">{selectedOrganization.bankDetails?.accountName || "N/A"}</p>
+                        <p className="font-medium">{selectedOrganization.bankDetails?.accountName || "N/A"}</p>
                       </div>
                       <div className="p-4 border rounded-lg bg-muted/10">
                         <p className="text-xs text-muted-foreground uppercase">Account Number</p>
                         <p className="font-medium font-mono tracking-wider">{selectedOrganization.bankDetails?.accountNumber || "N/A"}</p>
                       </div>
                       <div className="p-4 border rounded-lg bg-muted/10">
-                        <p className="text-xs text-muted-foreground uppercase">IFSC / Routing Code</p>
-                        <p className="font-medium font-mono uppercase">{selectedOrganization.bankDetails?.ifscCode || "N/A"}</p>
+                        <p className="text-xs text-muted-foreground uppercase">BSB Code / Routing</p>
+                        <p className="font-medium font-mono uppercase">{selectedOrganization.bankDetails?.bsbCode || selectedOrganization.bankDetails?.ifscCode || "N/A"}</p>
                       </div>
                     </div>
                   </div>
