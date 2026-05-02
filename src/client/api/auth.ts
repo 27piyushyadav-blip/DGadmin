@@ -1,4 +1,4 @@
-const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000/auth/admin";
+const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://api.digitaloffices.com.au/auth/admin";
 
 // Types for API responses
 type AuthResponse = {

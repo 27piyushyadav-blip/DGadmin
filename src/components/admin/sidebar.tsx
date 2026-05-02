@@ -17,7 +17,9 @@ import {
   ChevronDown,
   ChevronRight,
   Menu,
-  X
+  X,
+  User2,
+  BookCheck
 } from "lucide-react";
 
 interface SidebarProps {
@@ -41,7 +43,8 @@ const menuItems = [
       { id: "pending-verification", label: "Pending Verification", href: "/admin/experts/pending" },
       { id: "verified-experts", label: "Verified Experts", href: "/admin/experts/verified" },
       { id: "rejected-experts", label: "Rejected Experts", href: "/admin/experts/rejected" },
-      { id: "profile-change-requests", label: "Profile Change Requests", href: "/admin/experts/changes" }
+      { id: "profile-change-requests", label: "Profile Change Requests", href: "/admin/experts/changes" },
+      { id: "Expert-managment", label: "Expert Management", href: "/admin/experts/manage" }
     ]
   },
   {
@@ -51,7 +54,8 @@ const menuItems = [
     children: [
       { id: "all-organizations", label: "All Organizations", href: "/admin/organizations" },
       { id: "pending-verification-org", label: "Pending Verification", href: "/admin/organizations/pending" },
-      { id: "profile-change-requests-org", label: "Profile Change Requests", href: "/admin/organizations/changes" }
+      { id: "profile-change-requests-org", label: "Profile Change Requests", href: "/admin/organizations/changes" },
+      { id: "organizations-managment", label: "organization Managament", href: "/admin/organizations/manage" }
     ]
   },
   {
@@ -75,6 +79,18 @@ const menuItems = [
       { id: "completed-bookings", label: "Completed", href: "/admin/bookings/completed" },
       { id: "cancelled-bookings", label: "Cancelled", href: "/admin/bookings/cancelled" }
     ]
+  },
+  {
+    id: "onboarding",
+    label: "On-Boarding",
+    icon: User2,
+    href: "/admin/on-board"
+  },
+  {
+    id: "action-center",
+    label: "Action Center",
+    icon: BookCheck,
+    href: "/admin/action-center"
   },
   {
     id: "live-sessions",
