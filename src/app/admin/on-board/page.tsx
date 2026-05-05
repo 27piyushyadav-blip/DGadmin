@@ -586,24 +586,26 @@ const getOptionIcon = (option) => {
                         vertical: 'top',
                         horizontal: 'center',
                     }}
-                    PaperProps={{
-                        elevation: 3,
-                        sx: {
-                        mt: 1,
-                        minWidth: 160,
-                        borderRadius: '12px',
-                        overflow: 'hidden',
-                        '& .MuiMenuItem-root': {
-                            py: 1.5,
-                            px: 2,
-                            gap: 1.5,
-                            transition: 'all 0.2s',
-                            '&:hover': {
-                            backgroundColor: '#f3f4f6',
-                            },
-                        },
-                        },
-                    }}
+                      slotProps={{
+        paper: {
+            elevation: 3,
+            sx: {
+                mt: 1,
+                minWidth: 160,
+                borderRadius: '12px',
+                overflow: 'hidden',
+                '& .MuiMenuItem-root': {
+                    py: 1.5,
+                    px: 2,
+                    gap: 1.5,
+                    transition: 'all 0.2s',
+                    '&:hover': {
+                        backgroundColor: '#f3f4f6',
+                    },
+                },
+            },
+        }
+    }}
                     >
                     {activeDropdown && 
                         [
@@ -624,10 +626,14 @@ const getOptionIcon = (option) => {
                             </ListItemIcon>
                             <ListItemText 
                                 primary={option}
-                                primaryTypographyProps={{
-                                fontSize: '0.875rem',
-                                fontWeight: 500,
-                                }}
+                                slotProps={{
+        primary: {
+            sx: {
+                fontSize: '0.875rem',
+                fontWeight: 500,
+            }
+        }
+    }}
                             />
                             </MenuItem>
                         ))
