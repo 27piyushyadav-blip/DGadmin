@@ -85,11 +85,20 @@ export default function OrganizationExpertsPage() {
       setLoading(true);
       const response = await apiClient<any[]>(`/admin/organizations/${orgId}/experts`);
       // The API returns { expert: ..., expert_profile: ... }
-      const flattenedExperts = (response || []).map(item => ({
-        ...(item.expert || {}),
-        ...(item.expert_profile || {}),
-        id: item.expert?.id || item.expert_profile?.userId // Ensure we have an ID
-      }));
+      const flattenedExperts = (response || []).map(item => {
+        // If the API already returned a flat object, use it. Otherwise, flatten it.
+        if (item.name && !item.expert) {
+          return {
+            ...item,
+            id: item.expertId || item.id
+          };
+        }
+        return {
+          ...(item.expert || {}),
+          ...(item.expert_profile || {}),
+          id: item.expert?.id || item.expert_profile?.userId // Ensure we have an ID
+        };
+      });
       setExperts(flattenedExperts);
     } catch (error) {
       toast.error('Failed to fetch experts');
@@ -107,7 +116,7 @@ export default function OrganizationExpertsPage() {
   }, [orgId]);
 
   const filteredExperts = experts.filter(expert =>
-    expert.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (expert.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
     (expert.category || expert.specialization || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
