@@ -49,6 +49,17 @@ import {
 import { Button } from '@/components/ui/button';
 import { SideModal } from '@/components/common/sideModal';
 import { Menu, MenuItem, ListItemIcon, ListItemText, Divider } from '@mui/material';
+import { set } from 'zod';
+import {
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogFooter,
+  DialogTitle,
+  DialogDescription,
+  DialogClose,
+} from '@/components/ui/dialog';
 
 // Mock data for organisations with experts
 const organisationsData = [
@@ -268,14 +279,24 @@ export default function ExpertManagement() {
 const [openIconDropdown, setOpenIconDropdown] = useState<string | null>(null);
 const [iconDropdownPosition, setIconDropdownPosition] = useState<{ bottom: number; left: number } | null>(null);
 // Add this state with your other useState declarations:
-const [activeTab, setActiveTab] = useState<'requested' | 'verified'>('requested');
 const [anchorEl, setAnchorEl] = useState(null);
 const [activeDropdown, setActiveDropdown] = useState(null);
+const [showChangeOrgImageDialog, setShowChangeOrgImageDialog] = useState(false);
+const [showEditOrgDialog, setShowEditOrgDialog] = useState(false);
+const [showManageExpertsDialog, setShowManageExpertsDialog] = useState(false);
+const [showDeleteOrgDialog, setShowDeleteOrgDialog] = useState(false);
 
-const handleDropdownClick = (label, event) => {
-  setAnchorEl(event.currentTarget);
-  setActiveDropdown(label);
-};
+
+const [orgFormData, setOrgFormData] = useState({
+  name: '',
+  phone: '',
+  email: '',
+  address: '',
+  type: ''
+});
+const [selectedOrgImage, setSelectedOrgImage] = useState<File | null>(null);
+
+
 
 const handleDropdownClose = () => {
   setAnchorEl(null);
@@ -323,6 +344,54 @@ const getOptionIcon = (option) => {
     default: return null;
   }
 };
+
+// Add these handler functions after the existing handlers
+
+
+
+// Organization handlers
+const handleEditOrganization = () => {
+  setOrgFormData({
+    name: selectedExpert?.organisation || '',
+    phone: '+1 234 567 8900',
+    email: 'contact@organization.com',
+    address: '123 Main Street, New York, NY 10001',
+    type: 'Massage Parlour'
+  });
+  setShowExpertModal(false);
+  setShowEditOrgDialog(true);
+};
+
+const handleManageExperts = () => {
+  setShowExpertModal(false);
+  setShowManageExpertsDialog(true);
+};
+
+const handleChangeOrgImage = () => {
+  setShowExpertModal(false);
+  setShowChangeOrgImageDialog(true);
+};
+
+const handleDeleteOrganization = () => {
+  setShowExpertModal(false);
+  setShowDeleteOrgDialog(true);
+};
+
+
+
+const handleSaveOrgChanges = () => {
+  console.log('Saving organization changes:', orgFormData);
+  // API call to update organization
+  setShowEditOrgDialog(false);
+};
+
+const handleConfirmDeleteOrg = () => {
+  console.log('Deleting organization:', selectedExpert?.organisation);
+  // API call to delete organization
+  setShowDeleteOrgDialog(false);
+  setShowExpertModal(false);
+};
+
 
   return (
     <div className="flex h-full bg-gray-50 font-sans">
@@ -470,7 +539,7 @@ const getOptionIcon = (option) => {
                             {org.status}
                         </span>
                         </div>
-                        <button className="text-xs text-blue-600 hover:text-blue-700 font-medium" onClick={()=>setShowExpertModal(true)}>
+                        <button className="text-xs text-blue-600 hover:text-blue-700 font-medium" onClick={()=>{setShowExpertModal(true),setSelectedExpert(null)}}>
                             VIEW ORGANIZATION
                             <ChevronRight size={14} className="inline-block ml-1" />
                         </button>
@@ -484,180 +553,108 @@ const getOptionIcon = (option) => {
           <div className="overflow-x-auto scrollbar-hide scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
             <div className="flex gap-4 p-4 min-w-min">
               {org.experts.map((expert) => (
-                // <div 
-                //   key={expert.id} 
-                //   className="flex-shrink-0 w-40 bg-gray-50 rounded-lg p-3 hover:shadow-md transition-shadow cursor-pointer"
-                // >
-                //   <div className="relative">
-                //     <img
-                //       src={expert.image}
-                //       alt={expert.name}
-                //       className="w-16 h-16 rounded-full object-cover mx-auto mb-2"
-                //     />
-                //   </div>
-                //     <button 
-                //           className="relative top-[-5rem] ml-[8rem] text-center text-xs text-gray-500 hover:text-gray-700"
-                //           onClick={(e) => {
-
-                //           //   e.stopPropagation();
-                //             setOpenExpertDropdownId(openExpertDropdownId === expert.id ? null : expert.id);
-                //           }}
-                //         >
-                //           <EllipsisVertical size={14} className="mx-auto" />
-                //         </button>
-                //         {openExpertDropdownId === expert.id && (
-                //         <div className="absolute right-0 top-10 z-50 w-48 bg-white border border-gray-200 rounded-md shadow-lg py-1">
-                //           <div className="px-1 py-1 text-sm text-gray-700">
-                //             <div className="flex items-center px-2 py-2 hover:bg-gray-100 cursor-pointer rounded">
-                //               <Edit3 className="mr-2 h-4 w-4" />
-                //               Edit Profile
-                //             </div>
-                //             <div className="flex items-center px-2 py-2 hover:bg-gray-100 cursor-pointer rounded">
-                //               <Eye className="mr-2 h-4 w-4" />
-                //               View Profile
-                //             </div>
-                //             <div className="flex items-center px-2 py-2 hover:bg-gray-100 cursor-pointer rounded">
-                //               <User className="mr-2 h-4 w-4" />
-                //               Change DP
-                //             </div>
-                //             <div className="flex items-center px-2 py-2 hover:bg-gray-100 cursor-pointer rounded">
-                //               <VideoIcon className="mr-2 h-4 w-4" />
-                //               Change Video
-                //             </div>
-                //             <div className="flex items-center px-2 py-2 hover:bg-gray-100 cursor-pointer rounded">
-                //               <VideoIcon className="mr-2 h-4 w-4" />
-                //               Change Timings
-                //             </div>
-                //             <div className="flex items-center px-2 py-2 hover:bg-gray-100 cursor-pointer rounded">
-                //               <VideoIcon className="mr-2 h-4 w-4" />
-                //               Booking Details
-                //             </div>
-                //             <div className="flex items-center px-2 py-2 hover:bg-gray-100 cursor-pointer rounded text-red-600">
-                //               <Trash2 className="mr-2 h-4 w-4" />
-                //               Delete Organisation
-                //             </div>
-                //           </div>
-                //         </div>
-                //       )}
-                //   <h4 className="font-medium text-gray-900 text-sm text-center truncate" 
-                //    onClick={() => {
-                //     setSelectedExpert({ ...expert, organisation: org.name, organisationImage: org.image });
-                //     setShowExpertModal(true);
-                //   }}
-                //   >
-                //     {expert.name}
-                //   </h4>
-                //   <div className="flex items-center justify-center gap-2 mt-1">
-                //     <div className="flex items-center gap-0.5">
-                //       <Star size={10} className="text-yellow-500 fill-yellow-500" />
-                //       <span className="text-xs font-medium">{expert.rating}</span>
-                //     </div>
-                //     <span className="text-xs text-gray-500">{expert.bookings}</span>
-                //     <span className="text-xs text-gray-500">{expert.experience}</span>
-                //   </div>
-
-                // </div>
+                
                 <div 
-  key={expert.id} 
-  className="flex-shrink-0 w-40 bg-gray-50 rounded-lg p-3 hover:shadow-md transition-shadow cursor-pointer relative"
->
-  <div className="relative mb-2">
-    <img
-      src={expert.image}
-      alt={expert.name}
-      className="w-16 h-16 rounded-full object-cover mx-auto"
-    />
-    <button 
-      ref={(el) => {
-        buttonRefs.current[expert.id] = el;
-      }}
-      className="absolute -top-2 -right-2 text-center text-xs text-gray-500 hover:text-gray-700 bg-white rounded-full p-1 shadow-md z-10"
-    >
-      <Trash2 size={14}/>
-    </button>
+                  key={expert.id} 
+                  className="flex-shrink-0 w-40 bg-gray-50 rounded-lg p-3 hover:shadow-md transition-shadow cursor-pointer relative"
+                >
+                  <div className="relative mb-2">
+                    <img
+                      src={expert.image}
+                      alt={expert.name}
+                      className="w-16 h-16 rounded-full object-cover mx-auto"
+                    />
+                    <button 
+                      ref={(el) => {
+                        buttonRefs.current[expert.id] = el;
+                      }}
+                      className="absolute -top-2 -right-2 text-center text-xs text-gray-500 hover:text-gray-700 bg-white rounded-full p-1 shadow-md z-10"
+                    >
+                      <Trash2 size={14}/>
+                    </button>
 
-    <button 
-      ref={(el) => {
-        buttonRefs.current[expert.id] = el;
-      }}
-      className="absolute -top-2 -right-[-1rem] text-center text-xs text-gray-500 hover:text-gray-700 bg-white rounded-full p-1 shadow-md z-10"
-    >
-      <Eye size={14} />
-    </button>
-  </div>
-  
-  {openExpertDropdownId === expert.id && dropdownPosition && (
-    <>
-      {/* Backdrop to close dropdown when clicking outside */}
-      <div 
-        className="fixed inset-0 z-40"
-        onClick={(e) => {
-          e.stopPropagation();
-          setOpenExpertDropdownId(null);
-          setDropdownPosition(null);
-        }}
-      />
-      <div 
-        className="fixed z-50 w-48 bg-white border border-gray-200 rounded-md shadow-lg py-1"
-        style={{
-          bottom: `${dropdownPosition.bottom}px`,
-          right: `${dropdownPosition.right}px`,
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="py-1 text-sm text-gray-700">
-          <div className="flex items-center px-4 py-2 hover:bg-gray-100 cursor-pointer">
-            <Edit3 className="mr-3 h-4 w-4" />
-            Edit Profile
-          </div>
-          <div className="flex items-center px-4 py-2 hover:bg-gray-100 cursor-pointer">
-            <Eye className="mr-3 h-4 w-4" />
-            View Profile
-          </div>
-          <div className="flex items-center px-4 py-2 hover:bg-gray-100 cursor-pointer">
-            <User className="mr-3 h-4 w-4" />
-            Change DP
-          </div>
-          <div className="flex items-center px-4 py-2 hover:bg-gray-100 cursor-pointer">
-            <VideoIcon className="mr-3 h-4 w-4" />
-            Change Video
-          </div>
-          <div className="flex items-center px-4 py-2 hover:bg-gray-100 cursor-pointer">
-            <VideoIcon className="mr-3 h-4 w-4" />
-            Change Timings
-          </div>
-          <div className="flex items-center px-4 py-2 hover:bg-gray-100 cursor-pointer">
-            <VideoIcon className="mr-3 h-4 w-4" />
-            Booking Details
-          </div>
-          <div className="border-t border-gray-100 mt-1 pt-1">
-            <div className="flex items-center px-4 py-2 hover:bg-red-50 cursor-pointer text-red-600">
-              <Trash2 className="mr-3 h-4 w-4" />
-              Delete Expert
-            </div>
-          </div>
-        </div>
-      </div>
-    </>
-  )}
-  
-  <h4 className="font-medium text-gray-900 text-sm text-center truncate mt-2 hover:text-blue-600"
-  onClick={() => {
-                    setSelectedExpert({ ...expert, organisation: org.name, organisationImage: org.image });
-                    setShowExpertModal(true);
-                  }}
-  >
-    {expert.name}
-  </h4>
-  <div className="flex items-center justify-center gap-2 mt-1">
-    <div className="flex items-center gap-0.5">
-      <Star size={10} className="text-yellow-500 fill-yellow-500" />
-      <span className="text-xs font-medium">{expert.rating}</span>
-    </div>
-    <span className="text-xs text-gray-500">{expert.bookings}</span>
-    <span className="text-xs text-gray-500">{expert.experience}</span>
-  </div>
-</div>
+                    <button 
+                      ref={(el) => {
+                        buttonRefs.current[expert.id] = el;
+                      }}
+                      className="absolute -top-2 -right-[-1rem] text-center text-xs text-gray-500 hover:text-gray-700 bg-white rounded-full p-1 shadow-md z-10"
+                    >
+                      <Eye size={14} />
+                    </button>
+                  </div>
+                  
+                  {openExpertDropdownId === expert.id && dropdownPosition && (
+                    <>
+                      {/* Backdrop to close dropdown when clicking outside */}
+                      <div 
+                        className="fixed inset-0 z-40"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setOpenExpertDropdownId(null);
+                          setDropdownPosition(null);
+                        }}
+                      />
+                      <div 
+                        className="fixed z-50 w-48 bg-white border border-gray-200 rounded-md shadow-lg py-1"
+                        style={{
+                          bottom: `${dropdownPosition.bottom}px`,
+                          right: `${dropdownPosition.right}px`,
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div className="py-1 text-sm text-gray-700">
+                          <div className="flex items-center px-4 py-2 hover:bg-gray-100 cursor-pointer">
+                            <Edit3 className="mr-3 h-4 w-4" />
+                            Edit Profile
+                          </div>
+                          <div className="flex items-center px-4 py-2 hover:bg-gray-100 cursor-pointer">
+                            <Eye className="mr-3 h-4 w-4" />
+                            View Profile
+                          </div>
+                          <div className="flex items-center px-4 py-2 hover:bg-gray-100 cursor-pointer">
+                            <User className="mr-3 h-4 w-4" />
+                            Change DP
+                          </div>
+                          <div className="flex items-center px-4 py-2 hover:bg-gray-100 cursor-pointer">
+                            <VideoIcon className="mr-3 h-4 w-4" />
+                            Change Video
+                          </div>
+                          <div className="flex items-center px-4 py-2 hover:bg-gray-100 cursor-pointer">
+                            <VideoIcon className="mr-3 h-4 w-4" />
+                            Change Timings
+                          </div>
+                          <div className="flex items-center px-4 py-2 hover:bg-gray-100 cursor-pointer">
+                            <VideoIcon className="mr-3 h-4 w-4" />
+                            Booking Details
+                          </div>
+                          <div className="border-t border-gray-100 mt-1 pt-1">
+                            <div className="flex items-center px-4 py-2 hover:bg-red-50 cursor-pointer text-red-600">
+                              <Trash2 className="mr-3 h-4 w-4" />
+                              Delete Expert
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                  
+                  <h4 className="font-medium text-gray-900 text-sm text-center truncate mt-2 hover:text-blue-600"
+                  // onClick={() => {
+                  //                   setSelectedExpert({ ...expert, organisation: org.name, organisationImage: org.image });
+                  //                   setShowExpertModal(true);
+                  //                 }}
+                  >
+                    {expert.name}
+                  </h4>
+                  <div className="flex items-center justify-center gap-2 mt-1">
+                    <div className="flex items-center gap-0.5">
+                      <Star size={10} className="text-yellow-500 fill-yellow-500" />
+                      <span className="text-xs font-medium">{expert.rating}</span>
+                    </div>
+                    <span className="text-xs text-gray-500">{expert.bookings}</span>
+                    <span className="text-xs text-gray-500">{expert.experience}</span>
+                  </div>
+                </div>
               ))}
             </div>
           </div>
@@ -729,103 +726,6 @@ const getOptionIcon = (option) => {
   onClose={() => setShowExpertModal(false)}
   width="w-[450px]"
 >
-  {selectedExpert ? (
-    <>
-      {/* Expert Profile Header */}
-      <div className="text-center mb-6">
-        <div className="relative inline-block">
-          <img
-            src={selectedExpert.image}
-            alt={selectedExpert.name}
-            className="w-24 h-24 rounded-full object-cover mx-auto mb-3 border-4 border-white shadow-md"
-          />
-          {selectedExpert.verified && (
-            <div className="absolute bottom-2 right-0 bg-blue-500 rounded-full p-1">
-              <CheckCircle size={12} className="text-white" />
-            </div>
-          )}
-        </div>
-        <h3 className="text-xl font-semibold text-gray-900">{selectedExpert.name}</h3>
-        <p className="text-sm text-gray-500 mt-1">{selectedExpert.organisation}</p>
-        <div className="flex items-center justify-center gap-3 mt-2">
-          <div className="flex items-center gap-1">
-            <Star size={16} className="text-yellow-500 fill-yellow-500" />
-            <span className="text-sm font-medium">{selectedExpert.rating}</span>
-          </div>
-          <span className="text-gray-300">|</span>
-          <span className="text-sm text-gray-600">{selectedExpert.bookings} bookings</span>
-          <span className="text-gray-300">|</span>
-          <span className="text-sm text-gray-600">{selectedExpert.experience}</span>
-        </div>
-      </div>
-
-      {/* Contact Information */}
-      <div className="mb-6 bg-gray-50 rounded-lg p-4">
-        <h4 className="text-sm font-semibold text-gray-700 mb-3">Contact Information</h4>
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 text-sm text-gray-600">
-            <Phone size={14} />
-            <span>{selectedExpert.phone || '+1 234 567 8900'}</span>
-          </div>
-          <div className="flex items-center gap-2 text-sm text-gray-600">
-            <Mail size={14} />
-            <span>{selectedExpert.email || 'expert@example.com'}</span>
-          </div>
-          <div className="flex items-center gap-2 text-sm text-gray-600">
-            <Calendar size={14} />
-            <span>Experience: {selectedExpert.experience}</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Specialities */}
-      {selectedExpert.specialities && (
-        <div className="mb-6">
-          <h4 className="text-sm font-semibold text-gray-700 mb-2">Specialities</h4>
-          <div className="flex flex-wrap gap-2">
-            {selectedExpert.specialities.map((spec: string, idx: number) => (
-              <span key={idx} className="px-2 py-1 bg-blue-50 text-blue-700 text-xs rounded-full">
-                {spec}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Stats */}
-      <div className="mb-6 grid grid-cols-2 gap-3">
-        <div className="bg-gray-50 rounded-lg p-3 text-center">
-          <p className="text-2xl font-bold text-gray-800">{selectedExpert.bookings}</p>
-          <p className="text-xs text-gray-500">Total Bookings</p>
-        </div>
-        <div className="bg-gray-50 rounded-lg p-3 text-center">
-          <p className="text-2xl font-bold text-gray-800">4.8</p>
-          <p className="text-xs text-gray-500">Avg Rating</p>
-        </div>
-      </div>
-
-      {/* Action Buttons */}
-      <div className="border-t border-gray-200 pt-4 space-y-2">
-        <button className="w-full text-left py-2 px-3 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors flex items-center gap-2">
-          <Image size={16} />
-          Change Profile Picture
-        </button>
-        <button className="w-full text-left py-2 px-3 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors flex items-center gap-2">
-          <Video size={16} />
-          Change Intro Video
-        </button>
-        <button className="w-full text-left py-2 px-3 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors flex items-center gap-2">
-          <Edit3 size={16} />
-          Edit Profile Details
-        </button>
-        <button className="w-full text-left py-2 px-3 text-red-600 hover:bg-red-50 rounded-lg transition-colors flex items-center gap-2">
-          <Trash2 size={16} />
-          Delete Expert
-        </button>
-      </div>
-    </>
-  ) : (
-    // Organization UI when no expert is selected
     <>
       {/* Organization Header */}
       <div className="text-center mb-6">
@@ -902,27 +802,237 @@ const getOptionIcon = (option) => {
 
       {/* Action Buttons for Organization */}
       <div className="border-t border-gray-200 pt-4 space-y-2">
-        <button className="w-full text-left py-2 px-3 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors flex items-center gap-2">
-          <Building2 size={16} />
-          Edit Organization Details
-        </button>
-        <button className="w-full text-left py-2 px-3 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors flex items-center gap-2">
-          <Users size={16} />
-          Manage Experts
-        </button>
-        <button className="w-full text-left py-2 px-3 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors flex items-center gap-2">
-          <Image size={16} />
-          Change Organization Image
-        </button>
-        <button className="w-full text-left py-2 px-3 text-red-600 hover:bg-red-50 rounded-lg transition-colors flex items-center gap-2">
-          <Trash2 size={16} />
-          Delete Organization
-        </button>
+        <button 
+  className="w-full text-left py-2 px-3 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors flex items-center gap-2"
+  onClick={handleEditOrganization}
+>
+  <Building2 size={16} />
+  Edit Organization Details
+</button>
+<button 
+  className="w-full text-left py-2 px-3 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors flex items-center gap-2"
+  onClick={handleManageExperts}
+>
+  <Users size={16} />
+  Manage Experts
+</button>
+<button 
+  className="w-full text-left py-2 px-3 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors flex items-center gap-2"
+  onClick={handleChangeOrgImage}
+>
+  <Image size={16} />
+  Change Organization Image
+</button>
+<button 
+  className="w-full text-left py-2 px-3 text-red-600 hover:bg-red-50 rounded-lg transition-colors flex items-center gap-2"
+  onClick={handleDeleteOrganization}
+>
+  <Trash2 size={16} />
+  Delete Organization
+</button>
       </div>
     </>
-  )}
+ 
 </SideModal>
 
+{/* Change Organization Image Dialog */}
+<Dialog open={showChangeOrgImageDialog} onOpenChange={setShowChangeOrgImageDialog}>
+  <DialogContent>
+    <DialogHeader>
+      <DialogTitle>Change Organization Image</DialogTitle>
+      <DialogDescription>
+        Upload a new image for {selectedExpert?.organisation}
+      </DialogDescription>
+    </DialogHeader>
+    <div className="py-4">
+      <div className="flex items-center justify-center mb-4">
+        {selectedOrgImage ? (
+          <img
+            src={URL.createObjectURL(selectedOrgImage)}
+            alt="Preview"
+            className="w-32 h-32 rounded-lg object-cover"
+          />
+        ) : (
+          <img
+            src={selectedExpert?.organisationImage}
+            alt={selectedExpert?.organisation}
+            className="w-32 h-32 rounded-lg object-cover"
+          />
+        )}
+      </div>
+      <input
+        type="file"
+        accept="image/*"
+        onChange={(e) => {
+          if (e.target.files && e.target.files[0]) {
+            setSelectedOrgImage(e.target.files[0]);
+          }
+        }}
+        className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+      />
+    </div>
+    <DialogFooter>
+      <DialogClose variant="outline">Cancel</DialogClose>
+      <Button 
+        onClick={() => {
+          console.log('Uploading Org Image:', selectedOrgImage?.name);
+          setShowChangeOrgImageDialog(false);
+          setSelectedOrgImage(null);
+        }}
+        disabled={!selectedOrgImage}
+      >
+        Upload Image
+      </Button>
+    </DialogFooter>
+  </DialogContent>
+</Dialog>
+
+{/* Edit Organization Details Dialog */}
+<Dialog open={showEditOrgDialog} onOpenChange={setShowEditOrgDialog}>
+  <DialogContent className="max-w-lg">
+    <DialogHeader>
+      <DialogTitle>Edit Organization Details</DialogTitle>
+      <DialogDescription>
+        Update information for {selectedExpert?.organisation}
+      </DialogDescription>
+    </DialogHeader>
+    <div className="py-4 space-y-4">
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Organization Name</label>
+        <input
+          type="text"
+          value={orgFormData.name}
+          onChange={(e) => setOrgFormData({...orgFormData, name: e.target.value})}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Organization Type</label>
+        <input
+          type="text"
+          value={orgFormData.type}
+          onChange={(e) => setOrgFormData({...orgFormData, type: e.target.value})}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+        <input
+          type="tel"
+          value={orgFormData.phone}
+          onChange={(e) => setOrgFormData({...orgFormData, phone: e.target.value})}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+        <input
+          type="email"
+          value={orgFormData.email}
+          onChange={(e) => setOrgFormData({...orgFormData, email: e.target.value})}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Address</label>
+        <textarea
+          value={orgFormData.address}
+          onChange={(e) => setOrgFormData({...orgFormData, address: e.target.value})}
+          rows={3}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+    </div>
+    <DialogFooter>
+      <DialogClose variant="outline">Cancel</DialogClose>
+      <Button onClick={handleSaveOrgChanges}>Save Changes</Button>
+    </DialogFooter>
+  </DialogContent>
+</Dialog>
+
+{/* Manage Experts Dialog */}
+<Dialog open={showManageExpertsDialog} onOpenChange={setShowManageExpertsDialog}>
+  <DialogContent className="max-w-2xl">
+    <DialogHeader>
+      <DialogTitle>Manage Experts</DialogTitle>
+      <DialogDescription>
+        Manage all experts working at {selectedExpert?.organisation}
+      </DialogDescription>
+    </DialogHeader>
+    <div className="py-4">
+      <div className="space-y-3 max-h-96 overflow-y-auto">
+        {organisationsData
+          .find(org => org.name === selectedExpert?.organisation)
+          ?.experts.map((expert) => (
+            <div key={expert.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+              <img
+                src={expert.image}
+                alt={expert.name}
+                className="w-10 h-10 rounded-full object-cover"
+              />
+              <div className="flex-1">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium text-gray-900">{expert.name}</p>
+                    <div className="flex items-center gap-2 text-xs text-gray-500">
+                      <span>Rating: {expert.rating} ⭐</span>
+                      <span>{expert.bookings} bookings</span>
+                      <span>{expert.experience}</span>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline">Edit</Button>
+                    <Button size="sm" variant="destructive">Remove</Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+      </div>
+      <div className="mt-4 pt-4 border-t border-gray-200">
+        <Button className="w-full" variant="outline">
+          <Plus size={16} className="mr-2" />
+          Add New Expert
+        </Button>
+      </div>
+    </div>
+    <DialogFooter>
+      <DialogClose variant="outline">Close</DialogClose>
+    </DialogFooter>
+  </DialogContent>
+</Dialog>
+
+{/* Delete Organization Confirmation Dialog */}
+<Dialog open={showDeleteOrgDialog} onOpenChange={setShowDeleteOrgDialog}>
+  <DialogContent>
+    <DialogHeader>
+      <DialogTitle>Delete Organization</DialogTitle>
+      <DialogDescription>
+        Are you sure you want to delete "{selectedExpert?.organisation}"? This action cannot be undone.
+      </DialogDescription>
+    </DialogHeader>
+    <div className="py-4">
+      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+        <p className="text-sm text-red-800">
+          This will permanently delete:
+        </p>
+        <ul className="list-disc list-inside text-sm text-red-700 mt-2 space-y-1">
+          <li>All organization information</li>
+          <li>All experts associated with this organization</li>
+          <li>All services, bookings, and transactions</li>
+          <li>All reviews and ratings</li>
+          <li>All customer data related to this organization</li>
+        </ul>
+      </div>
+    </div>
+    <DialogFooter>
+      <DialogClose variant="outline">Cancel</DialogClose>
+      <Button variant="destructive" onClick={handleConfirmDeleteOrg}>
+        Yes, Delete Organization
+      </Button>
+    </DialogFooter>
+  </DialogContent>
+</Dialog>
 
     </div>
   );
