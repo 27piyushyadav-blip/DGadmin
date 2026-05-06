@@ -1,7 +1,10 @@
 // app/admin/page.tsx
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { apiClient } from '@/client/api/api-client';
+import { toast } from 'sonner';
 import {
   Building2,
   Users,
@@ -49,69 +52,7 @@ import {
 } from '@/components/ui/dialog';
 import { set } from 'zod';
 
-// Mock data for organisations
-const organisations = [
-  {
-    id: 1,
-    name: 'Losi Hair Cutting',
-    type: 'Massage Parlour',
-    status: 'Active',
-    earnings: '45K',
-    experts: 8,
-    image: 'https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=100&h=100&fit=crop',
-    rating: 4.5
-  },
-  {
-    id: 2,
-    name: 'Relax Massage',
-    type: 'Massage Parlour',
-    status: 'Active',
-    earnings: '10',
-    experts: 8,
-    image: 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=100&h=100&fit=crop',
-    rating: 4.2
-  },
-  {
-    id: 3,
-    name: 'Bliss Spa',
-    type: 'Massage Parlour',
-    status: 'Active',
-    earnings: '28K',
-    experts: 8,
-    image: 'https://images.unsplash.com/photo-1527799820374-dcf8d9d4a0b9?w=100&h=100&fit=crop',
-    rating: 4.8
-  },
-  {
-    id: 4,
-    name: 'Heaven Touch',
-    type: 'Massage Parlour',
-    status: 'Active',
-    earnings: '15',
-    experts: 8,
-    image: 'https://images.unsplash.com/photo-1515377905703-c4788e51af15?w=100&h=100&fit=crop',
-    rating: 4.0
-  },
-  {
-    id: 5,
-    name: 'Golden Hands',
-    type: 'Massage Parlour',
-    status: 'Active',
-    earnings: '30K',
-    experts: 8,
-    image: 'https://images.unsplash.com/photo-1590559899731-a382839e5547?w=100&h=100&fit=crop',
-    rating: 4.6
-  },
-  {
-    id: 6,
-    name: 'Zen Body Care',
-    type: 'Massage Parlour',
-    status: 'Active',
-    earnings: '11',
-    experts: 8,
-    image: 'https://images.unsplash.com/photo-1600334129128-685c5582fd35?w=100&h=100&fit=crop',
-    rating: 4.3
-  }
-];
+// Organisations state will be fetched from API
 
 const menuItems = [
   { icon: Building2, label: 'Organisations', active: true, subItems: ['Management', 'Experts', 'Management'] },
@@ -122,64 +63,103 @@ const menuItems = [
 ];
 
 export default function AdminPanel() {
+  const router = useRouter();
+  const [organisations, setOrganisations] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedReviews, setSelectedReviews] = useState<string[]>([]);
+  const [menuItemsList, setMenuItemsList] = useState<any[]>([]);
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [activeHours, setActiveHours] = useState<any>({});
+  const [tags, setTags] = useState<any[]>([]);
+
+
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('newest');
   const [sortOpen, setSortOpen] = useState(false);
-  const [selectedOrg, setSelectedOrg] = useState<number | null>(null);
   const [showActionPanel, setShowActionPanel] = useState(false);
   const [selectedOrgData, setSelectedOrgData] = useState<any>(null);
-  const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
-  // Add these state variables inside the AdminPanel component after other state declarations
-const [showChangeDPDialog, setShowChangeDPDialog] = useState(false);
-const [showChangeVideoDialog, setShowChangeVideoDialog] = useState(false);
-const [showChangeNameDialog, setShowChangeNameDialog] = useState(false);
-const [showChangeAddressDialog, setShowChangeAddressDialog] = useState(false);
-const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-const [newName, setNewName] = useState('');
-const [newAddress, setNewAddress] = useState('');
-const [selectedFile, setSelectedFile] = useState<File | null>(null);
-const [videoFile, setVideoFile] = useState<File | null>(null);
-const [showChangeMenuDialog, setShowChangeMenuDialog] = useState(false);
-const [showChangeHoursDialog, setShowChangeHoursDialog] = useState(false);
-const [showChangeTagsDialog, setShowChangeTagsDialog] = useState(false);
-const [showDeleteReviewsDialog, setShowDeleteReviewsDialog] = useState(false);
+  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
+  const [showChangeDPDialog, setShowChangeDPDialog] = useState(false);
+  const [showChangeVideoDialog, setShowChangeVideoDialog] = useState(false);
+  const [showChangeNameDialog, setShowChangeNameDialog] = useState(false);
+  const [showChangeAddressDialog, setShowChangeAddressDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [newName, setNewName] = useState('');
+  const [newAddress, setNewAddress] = useState({
+    street: '',
+    city: '',
+    state: '',
+    zip: ''
+  });
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [showChangeMenuDialog, setShowChangeMenuDialog] = useState(false);
+  const [showChangeHoursDialog, setShowChangeHoursDialog] = useState(false);
+  const [showChangeTagsDialog, setShowChangeTagsDialog] = useState(false);
+  const [showDeleteReviewsDialog, setShowDeleteReviewsDialog] = useState(false);
+  const [newTag, setNewTag] = useState('');
 
-// Menu state
-const [menuItemsList, setMenuItemsList] = useState([
-  { id: 1, name: 'Hair Cut', price: 499, active: true },
-  { id: 2, name: 'Hair Color', price: 999, active: true },
-  { id: 3, name: 'Shampoo', price: 199, active: false },
-  { id: 4, name: 'Styling', price: 799, active: true },
-]);
+  // Fetch organisations
+  const fetchOrganisations = async () => {
+    try {
+      setLoading(true);
+      const response = await apiClient<any>('/admin/organizations');
+      setOrganisations(response.organizations || []);
+    } catch (error) {
+      toast.error('Failed to fetch organisations');
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-// Active hours state
-const [activeHours, setActiveHours] = useState({
-  monday: { start: '09:00', end: '21:00', active: true },
-  tuesday: { start: '09:00', end: '21:00', active: true },
-  wednesday: { start: '09:00', end: '21:00', active: true },
-  thursday: { start: '09:00', end: '21:00', active: true },
-  friday: { start: '09:00', end: '21:00', active: true },
-  saturday: { start: '10:00', end: '20:00', active: true },
-  sunday: { start: '10:00', end: '18:00', active: false },
-});
+  useEffect(() => {
+    fetchOrganisations();
+  }, []);
 
-// Tags state
-const [tags, setTags] = useState([
-  { id: 1, name: 'Premium', color: 'bg-purple-100 text-purple-700' },
-  { id: 2, name: 'Affordable', color: 'bg-green-100 text-green-700' },
-  { id: 3, name: 'Luxury', color: 'bg-yellow-100 text-yellow-700' },
-  { id: 4, name: 'Family Friendly', color: 'bg-blue-100 text-blue-700' },
-]);
-const [newTag, setNewTag] = useState('');
+  // Fetch reviews for selected org
+  useEffect(() => {
+    if (selectedOrgData?.orgId && showDeleteReviewsDialog) {
+      const fetchReviews = async () => {
+        try {
+          const response = await apiClient<any[]>(`/admin/organizations/${selectedOrgData.orgId}/reviews`);
+          setReviews(response || []);
+        } catch (error) {
+          console.error('Failed to fetch reviews', error);
+        }
+      };
+      fetchReviews();
+    }
+  }, [selectedOrgData, showDeleteReviewsDialog]);
 
-// Reviews state
-const [reviews, setReviews] = useState([
-  { id: 1, userName: 'John D.', rating: 5, comment: 'Great service!', date: '2024-03-15' },
-  { id: 2, userName: 'Sarah M.', rating: 4, comment: 'Good experience', date: '2024-03-14' },
-  { id: 3, userName: 'Mike R.', rating: 2, comment: 'Not satisfied with service', date: '2024-03-13' },
-  { id: 4, userName: 'Emma W.', rating: 5, comment: 'Excellent! Will come again', date: '2024-03-12' },
-]);
-const [selectedReviews, setSelectedReviews] = useState<number[]>([]);
+  // Fetch services (menu) for selected org
+  useEffect(() => {
+    if (selectedOrgData?.orgId && showChangeMenuDialog) {
+      const fetchServices = async () => {
+        try {
+          const response = await apiClient<any[]>(`/admin/organizations/${selectedOrgData.orgId}/services`);
+          setMenuItemsList(response || []);
+        } catch (error) {
+          console.error('Failed to fetch services', error);
+        }
+      };
+      fetchServices();
+    }
+  }, [selectedOrgData, showChangeMenuDialog]);
+
+  useEffect(() => {
+    if (selectedOrgData) {
+      setActiveHours(selectedOrgData.operatingHours || {});
+      setTags(selectedOrgData.tags?.map((t: string, i: number) => ({ id: i, name: t, color: 'bg-blue-100 text-blue-700' })) || []);
+      setNewName(selectedOrgData.name || '');
+      setNewAddress({
+        street: selectedOrgData.addressLine1 || '',
+        city: selectedOrgData.city || '',
+        state: selectedOrgData.state || '',
+        zip: selectedOrgData.zipCode || ''
+      });
+    }
+  }, [selectedOrgData]);
 
   const filteredOrgs = organisations.filter(org =>
     org.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -203,7 +183,12 @@ const handleChangeName = () => {
 };
 
 const handleChangeAddress = () => {
-  setNewAddress(''); // You can fetch current address if available
+  setNewAddress({
+    street: selectedOrgData?.addressLine1 || '',
+    city: selectedOrgData?.city || '',
+    state: selectedOrgData?.state || '',
+    zip: selectedOrgData?.zipCode || ''
+  });
   setShowActionPanel(false);
   setShowChangeAddressDialog(true);
 };
@@ -214,25 +199,56 @@ const handleDeleteOrganisation = () => {
 };
 
 // New handler functions for dialog actions
-const handleConfirmChangeName = () => {
-  console.log('Change name to:', newName, 'for:', selectedOrgData?.name);
-  // API call to update name
-  setShowChangeNameDialog(false);
-  setNewName('');
+const handleConfirmChangeName = async () => {
+  if (!selectedOrgData?.orgId) return;
+  try {
+    await apiClient(`/admin/organizations/${selectedOrgData.orgId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ name: newName })
+    });
+    toast.success('Name updated successfully');
+    fetchOrganisations();
+    setShowChangeNameDialog(false);
+  } catch (error) {
+    toast.error('Failed to update name');
+  }
 };
 
-const handleConfirmChangeAddress = () => {
-  console.log('Change address to:', newAddress, 'for:', selectedOrgData?.name);
-  // API call to update address
-  setShowChangeAddressDialog(false);
-  setNewAddress('');
+const handleConfirmChangeAddress = async () => {
+  if (!selectedOrgData?.orgId) return;
+  try {
+    const addressString = `${newAddress.street}, ${newAddress.city}, ${newAddress.state} ${newAddress.zip}`;
+    await apiClient(`/admin/organizations/${selectedOrgData.orgId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ 
+        location: addressString,
+        addressLine1: newAddress.street,
+        city: newAddress.city,
+        state: newAddress.state,
+        zipCode: newAddress.zip
+      })
+    });
+    toast.success('Address updated successfully');
+    fetchOrganisations();
+    setShowChangeAddressDialog(false);
+  } catch (error) {
+    toast.error('Failed to update address');
+  }
 };
 
-const handleConfirmDelete = () => {
-  console.log('Delete Organisation:', selectedOrgData?.name);
-  // API call to delete organisation
-  setShowDeleteDialog(false);
-  setSelectedOrgData(null);
+const handleConfirmDelete = async () => {
+  if (!selectedOrgData?.orgId) return;
+  try {
+    await apiClient(`/admin/users/${selectedOrgData.orgId}`, {
+      method: 'DELETE'
+    });
+    toast.success('Organisation deleted successfully');
+    fetchOrganisations();
+    setShowDeleteDialog(false);
+    setSelectedOrgData(null);
+  } catch (error) {
+    toast.error('Failed to delete organisation');
+  }
 };
 
 const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -247,21 +263,41 @@ const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
   }
 };
 
-const handleConfirmChangeDP = () => {
-  if (selectedFile) {
-    console.log('Uploading DP:', selectedFile.name, 'for:', selectedOrgData?.name);
-    // API call to upload DP
-    setShowChangeDPDialog(false);
-    setSelectedFile(null);
+const handleConfirmChangeDP = async () => {
+  if (selectedFile && selectedOrgData?.orgId) {
+    try {
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+      await apiClient(`/admin/organizations/${selectedOrgData.orgId}/dp`, {
+        method: 'POST',
+        body: formData
+      });
+      toast.success('DP updated successfully');
+      fetchOrganisations();
+      setShowChangeDPDialog(false);
+      setSelectedFile(null);
+    } catch (error) {
+      toast.error('Failed to update DP');
+    }
   }
 };
 
-const handleConfirmChangeVideo = () => {
-  if (videoFile) {
-    console.log('Uploading Video:', videoFile.name, 'for:', selectedOrgData?.name);
-    // API call to upload video
-    setShowChangeVideoDialog(false);
-    setVideoFile(null);
+const handleConfirmChangeVideo = async () => {
+  if (videoFile && selectedOrgData?.orgId) {
+    try {
+      const formData = new FormData();
+      formData.append('file', videoFile);
+      await apiClient(`/admin/organizations/${selectedOrgData.orgId}/video`, {
+        method: 'POST',
+        body: formData
+      });
+      toast.success('Video updated successfully');
+      fetchOrganisations();
+      setShowChangeVideoDialog(false);
+      setVideoFile(null);
+    } catch (error) {
+      toast.error('Failed to update video');
+    }
   }
 };
 
@@ -288,36 +324,85 @@ const handleDeleteReviews = () => {
   setShowDeleteReviewsDialog(true);
 };
 
-// Menu handlers
+const handleConfirmDeleteReviews = async () => {
+  if (!selectedOrgData?.orgId || selectedReviews.length === 0) return;
+  try {
+    await Promise.all(selectedReviews.map(id => 
+      apiClient(`/admin/reviews/${id}`, { method: 'DELETE' })
+    ));
+    toast.success('Reviews deleted successfully');
+    setReviews(reviews.filter(review => !selectedReviews.includes(review.id)));
+    setSelectedReviews([]);
+    setShowDeleteReviewsDialog(false);
+  } catch (error) {
+    toast.error('Failed to delete some reviews');
+  }
+};
+
+// Menu handlers (Organization Services)
 const handleAddMenuItem = () => {
   const newItem = {
-    id: menuItemsList.length + 1,
-    name: 'New Item',
-    price: 0,
-    active: true,
+    id: `temp_${Date.now()}`,
+    name: 'New Service',
+    basePrice: 0,
+    isActive: true,
   };
   setMenuItemsList([...menuItemsList, newItem]);
 };
 
-const handleUpdateMenuItem = (id: number, field: string, value: any) => {
+const handleUpdateMenuItem = (id: string, field: string, value: any) => {
   setMenuItemsList(menuItemsList.map(item => 
     item.id === id ? { ...item, [field]: value } : item
   ));
 };
 
-const handleDeleteMenuItem = (id: number) => {
-  setMenuItemsList(menuItemsList.filter(item => item.id !== id));
+const handleDeleteMenuItem = async (id: string) => {
+  if (id.startsWith('temp_')) {
+    setMenuItemsList(menuItemsList.filter(item => item.id !== id));
+    return;
+  }
+  
+  if (!selectedOrgData?.orgId) return;
+  try {
+    await apiClient(`/admin/organizations/${selectedOrgData.orgId}/services/${id}`, {
+      method: 'DELETE'
+    });
+    setMenuItemsList(menuItemsList.filter(item => item.id !== id));
+    toast.success('Service deleted');
+  } catch (error) {
+    toast.error('Failed to delete service');
+  }
+};
+
+const handleSaveMenu = async () => {
+  if (!selectedOrgData?.orgId) return;
+  try {
+    // For simplicity, we'll handle new items and updates
+    await Promise.all(menuItemsList.map(item => {
+      if (item.id.startsWith('temp_')) {
+        const { id, ...data } = item;
+        return apiClient(`/admin/organizations/${selectedOrgData.orgId}/services`, {
+          method: 'POST',
+          body: JSON.stringify(data)
+        });
+      } else {
+        return apiClient(`/admin/organizations/${selectedOrgData.orgId}/services/${item.id}`, {
+          method: 'PUT',
+          body: JSON.stringify(item)
+        });
+      }
+    }));
+    toast.success('Menu updated successfully');
+    setShowChangeMenuDialog(false);
+  } catch (error) {
+    toast.error('Failed to save menu changes');
+  }
 };
 
 // Tags handlers
 const handleAddTag = () => {
   if (newTag.trim()) {
-    const newTagObj = {
-      id: tags.length + 1,
-      name: newTag,
-      color: 'bg-gray-100 text-gray-700',
-    };
-    setTags([...tags, newTagObj]);
+    setTags([...tags, { id: Date.now(), name: newTag, color: 'bg-blue-100 text-blue-700' }]);
     setNewTag('');
   }
 };
@@ -326,28 +411,67 @@ const handleDeleteTag = (id: number) => {
   setTags(tags.filter(tag => tag.id !== id));
 };
 
+const handleSaveTags = async () => {
+  if (!selectedOrgData?.orgId) return;
+  try {
+    const tagNames = tags.map(t => t.name);
+    await apiClient(`/admin/organizations/${selectedOrgData.orgId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ tags: tagNames })
+    });
+    toast.success('Tags updated successfully');
+    fetchOrganisations();
+    setShowChangeTagsDialog(false);
+  } catch (error) {
+    toast.error('Failed to update tags');
+  }
+};
+
+const handleSaveHours = async () => {
+  if (!selectedOrgData?.orgId) return;
+  try {
+    await apiClient(`/admin/organizations/${selectedOrgData.orgId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ operatingHours: activeHours })
+    });
+    toast.success('Active hours updated successfully');
+    fetchOrganisations();
+    setShowChangeHoursDialog(false);
+  } catch (error) {
+    toast.error('Failed to update active hours');
+  }
+};
+
+const handleToggleVisibility = async (visible: boolean) => {
+  if (!selectedOrgData?.orgId) return;
+  try {
+    await apiClient(`/admin/organizations/${selectedOrgData.orgId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ isVisible: visible })
+    });
+    toast.success(`Profile ${visible ? 'visible' : 'hidden'} on customer panel`);
+    fetchOrganisations();
+    setSelectedOrgData({ ...selectedOrgData, isVisible: visible });
+  } catch (error) {
+    toast.error('Failed to update visibility');
+  }
+};
+
 // Reviews handlers
 const handleSelectAllReviews = () => {
   if (selectedReviews.length === reviews.length) {
     setSelectedReviews([]);
   } else {
-    setSelectedReviews(reviews.map(r => r.id));
+    setSelectedReviews(reviews.map(item => item.review.id));
   }
 };
 
-const handleSelectReview = (id: number) => {
+const handleSelectReview = (id: string) => {
   if (selectedReviews.includes(id)) {
     setSelectedReviews(selectedReviews.filter(rid => rid !== id));
   } else {
     setSelectedReviews([...selectedReviews, id]);
   }
-};
-
-const handleConfirmDeleteReviews = () => {
-  console.log('Deleting reviews:', selectedReviews);
-  setReviews(reviews.filter(review => !selectedReviews.includes(review.id)));
-  setSelectedReviews([]);
-  setShowDeleteReviewsDialog(false);
 };
 
   return (
@@ -408,15 +532,23 @@ const handleConfirmDeleteReviews = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
             {filteredOrgs.map((org) => (
               <div
-                key={org.id}
+                key={org.orgId}
                 className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow"
               >
                 <div className="p-5">
                   <div className="flex items-start gap-4">
                     <img
-                      src={org.image}
-                      alt={org.name}
+                      src={
+                        org.logo ? (org.logo.startsWith('http') ? org.logo : `http://localhost:3000/uploads/organization-logos/${org.logo}`) :
+                        org.logoUrl ? (org.logoUrl.startsWith('http') ? org.logoUrl : `http://localhost:3000/uploads/organization-logos/${org.logoUrl}`) :
+                        org.image ? (org.image.startsWith('http') ? org.image : `http://localhost:3000/uploads/organization-logos/${org.image}`) :
+                        'https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=100&h=100&fit=crop'
+                      }
+                      alt={org.name || 'Organization'}
                       className="w-16 h-16 rounded-xl object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=100&h=100&fit=crop';
+                      }}
                     />
                     <div className="flex-1">
                       <div className="flex items-start justify-between">
@@ -429,11 +561,13 @@ const handleConfirmDeleteReviews = () => {
                           </h3>
                           <div className="flex items-center gap-2 mt-1">
                             <Briefcase size={14} className="text-gray-400" />
-                            <span className="text-sm text-gray-500">{org.type}</span>
+                            <span className="text-sm text-gray-500">{org.industry || org.type || 'Organization'}</span>
                           </div>
                         </div>
-                        <span className="flex items-center gap-1 text-xs font-medium text-green-700 bg-green-50 px-2 py-0.5 rounded-full">
-                          <CheckCircle size={12} />
+                        <span className={`flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${
+                          org.status === 'verified' ? 'text-green-700 bg-green-50' : 'text-yellow-700 bg-yellow-50'
+                        }`}>
+                          {org.status === 'verified' ? <CheckCircle size={12} /> : <Clock size={12} />}
                           {org.status}
                         </span>
                         <span className="relative">
@@ -442,10 +576,10 @@ const handleConfirmDeleteReviews = () => {
                             className="text-gray-400 cursor-pointer hover:text-gray-600" 
                             onClick={(e) => {
                               e.stopPropagation();
-                              setOpenDropdownId(openDropdownId === org.id ? null : org.id);
+                              setOpenDropdownId(openDropdownId === org.orgId ? null : org.orgId);
                             }}
                           />
-                          {openDropdownId === org.id && (
+                          {openDropdownId === org.orgId && (
                             <div className="absolute right-0 top-6 z-50 w-48 bg-white border border-gray-200 rounded-md shadow-lg py-1">
   <div className="px-1 py-1 text-sm text-gray-700">
     <div 
@@ -492,6 +626,15 @@ const handleConfirmDeleteReviews = () => {
       <Trash2 className="mr-2 h-4 w-4" />
       Delete Reviews
     </div>
+    <div 
+      className="flex items-center px-2 py-2 hover:bg-gray-100 cursor-pointer rounded border-t border-gray-100 mt-1"
+      onClick={() => {
+        router.push(`/admin/organizations/manage/${org.orgId}/experts`);
+      }}
+    >
+      <Users className="mr-2 h-4 w-4 text-blue-600" />
+      View Experts
+    </div>
   </div>
 </div>
                           )}
@@ -505,11 +648,11 @@ const handleConfirmDeleteReviews = () => {
                         </div>
                         <div className="flex items-center gap-1">
                           <Wallet size={14} className="text-gray-400" />
-                          <span className="text-sm font-medium">₹{org.earnings}</span>
+                          <span className="text-sm font-medium">₹{org.earnings || 0}</span>
                         </div>
                         <div className="flex items-center gap-1">
                           <Users size={14} className="text-gray-400" />
-                          <span className="text-sm font-medium">{org.experts} Experts</span>
+                          <span className="text-sm font-medium">{org.memberCount || 0} Experts</span>
                         </div>
                       </div>
                     </div>
@@ -663,26 +806,24 @@ const handleConfirmDeleteReviews = () => {
               <p className="text-xs text-gray-400 px-3">Update organisation address</p>
             </div>
 
-            {/* Hide Profile with Toggle */}
-            <div className="mb-2">
-              <div className="flex items-center justify-between py-2 px-3">
-                <span className="text-gray-700">Hide Profile</span>
-                <button className="relative w-10 h-5 bg-gray-300 rounded-full transition-colors">
-                  <span className="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full"></span>
-                </button>
-              </div>
-              <p className="text-xs text-gray-400 px-3">Hide profile from website</p>
-            </div>
-
-            {/* Show Profile with Toggle */}
+            {/* Visibility Toggle */}
             <div className="mb-6">
               <div className="flex items-center justify-between py-2 px-3">
-                <span className="text-gray-700">Show Profile</span>
-                <button className="relative w-10 h-5 bg-green-500 rounded-full transition-colors">
-                  <span className="absolute right-0.5 top-0.5 w-4 h-4 bg-white rounded-full"></span>
+                <span className="text-gray-700">Profile Visibility</span>
+                <button 
+                  onClick={() => handleToggleVisibility(!selectedOrgData.isVisible)}
+                  className={`relative w-10 h-5 rounded-full transition-colors ${
+                    selectedOrgData.isVisible ? 'bg-green-500' : 'bg-gray-300'
+                  }`}
+                >
+                  <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ${
+                    selectedOrgData.isVisible ? 'right-0.5' : 'left-0.5'
+                  }`}></span>
                 </button>
               </div>
-              <p className="text-xs text-gray-400 px-3">Show profile on website</p>
+              <p className="text-xs text-gray-400 px-3">
+                {selectedOrgData.isVisible ? 'Visible' : 'Hidden'} on customer panel
+              </p>
             </div>
 
             {/* Delete Organisation */}
@@ -803,20 +944,22 @@ const handleConfirmDeleteReviews = () => {
 
 {/* Change Address Dialog */}
 <Dialog open={showChangeAddressDialog} onOpenChange={setShowChangeAddressDialog}>
-  <DialogContent className="max-w-lg">
+  <DialogContent className="max-w-lg p-6">
     <DialogHeader>
       <DialogTitle>Change Organisation Address</DialogTitle>
       <DialogDescription>
         Update the address for {selectedOrgData?.name}
       </DialogDescription>
     </DialogHeader>
-    <div className="py-4 space-y-4">
+    <div className="py-2 space-y-4">
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
           Street Address
         </label>
         <input
           type="text"
+          value={newAddress.street}
+          onChange={(e) => setNewAddress({ ...newAddress, street: e.target.value })}
           placeholder="Enter street address"
           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
@@ -828,6 +971,8 @@ const handleConfirmDeleteReviews = () => {
           </label>
           <input
             type="text"
+            value={newAddress.city}
+            onChange={(e) => setNewAddress({ ...newAddress, city: e.target.value })}
             placeholder="City"
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
@@ -838,6 +983,8 @@ const handleConfirmDeleteReviews = () => {
           </label>
           <input
             type="text"
+            value={newAddress.state}
+            onChange={(e) => setNewAddress({ ...newAddress, state: e.target.value })}
             placeholder="State"
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
@@ -850,6 +997,8 @@ const handleConfirmDeleteReviews = () => {
           </label>
           <input
             type="text"
+            value={newAddress.zip}
+            onChange={(e) => setNewAddress({ ...newAddress, zip: e.target.value })}
             placeholder="Postal code"
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
@@ -861,6 +1010,7 @@ const handleConfirmDeleteReviews = () => {
           <input
             type="text"
             value="India"
+            readOnly
             className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 focus:outline-none"
           />
         </div>
@@ -928,24 +1078,24 @@ const handleConfirmDeleteReviews = () => {
               className="flex-1 px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Item name"
             />
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">₹</span>
-              <input
-                type="number"
-                value={item.price}
-                onChange={(e) => handleUpdateMenuItem(item.id, 'price', parseInt(e.target.value))}
-                className="w-28 pl-7 pr-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Price"
-              />
-            </div>
-            <button
-              onClick={() => handleUpdateMenuItem(item.id, 'active', !item.active)}
-              className={`px-3 py-1 rounded-full text-xs font-medium ${
-                item.active ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'
-              }`}
-            >
-              {item.active ? 'Active' : 'Inactive'}
-            </button>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">₹</span>
+                <input
+                  type="number"
+                  value={item.basePrice || item.price}
+                  onChange={(e) => handleUpdateMenuItem(item.id, 'basePrice', parseInt(e.target.value))}
+                  className="w-28 pl-7 pr-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Price"
+                />
+              </div>
+              <button
+                onClick={() => handleUpdateMenuItem(item.id, 'isActive', !item.isActive)}
+                className={`px-3 py-1 rounded-full text-xs font-medium ${
+                  item.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'
+                }`}
+              >
+                {item.isActive ? 'Active' : 'Inactive'}
+              </button>
             <button
               onClick={() => handleDeleteMenuItem(item.id)}
               className="p-1 text-red-500 hover:bg-red-50 rounded"
@@ -958,7 +1108,7 @@ const handleConfirmDeleteReviews = () => {
     </div>
     <DialogFooter>
       <DialogClose variant="outline">Cancel</DialogClose>
-      <Button onClick={() => setShowChangeMenuDialog(false)}>Save Changes</Button>
+      <Button onClick={handleSaveMenu}>Save Changes</Button>
     </DialogFooter>
   </DialogContent>
 </Dialog>
@@ -974,7 +1124,7 @@ const handleConfirmDeleteReviews = () => {
     </DialogHeader>
     <div className="py-4">
       <div className="space-y-3 max-h-96 overflow-y-auto">
-        {Object.entries(activeHours).map(([day, hours]) => (
+        {Object.entries(activeHours).map(([day, hours]: [string, any]) => (
           <div key={day} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
             <div className="w-24">
               <span className="text-sm font-medium capitalize">{day}</span>
@@ -1019,7 +1169,7 @@ const handleConfirmDeleteReviews = () => {
     </div>
     <DialogFooter>
       <DialogClose variant="outline">Cancel</DialogClose>
-      <Button onClick={() => setShowChangeHoursDialog(false)}>Save Hours</Button>
+      <Button onClick={handleSaveHours}>Save Hours</Button>
     </DialogFooter>
   </DialogContent>
 </Dialog>
@@ -1066,7 +1216,7 @@ const handleConfirmDeleteReviews = () => {
     </div>
     <DialogFooter>
       <DialogClose variant="outline">Cancel</DialogClose>
-      <Button onClick={() => setShowChangeTagsDialog(false)}>Save Tags</Button>
+      <Button onClick={handleSaveTags}>Save Tags</Button>
     </DialogFooter>
   </DialogContent>
 </Dialog>
@@ -1097,31 +1247,31 @@ const handleConfirmDeleteReviews = () => {
             )}
           </div>
           <div className="space-y-3 max-h-96 overflow-y-auto">
-            {reviews.map((review) => (
-              <div key={review.id} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+            {reviews.map((item) => (
+              <div key={item.review.id} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
                 <input
                   type="checkbox"
-                  checked={selectedReviews.includes(review.id)}
-                  onChange={() => handleSelectReview(review.id)}
+                  checked={selectedReviews.includes(item.review.id)}
+                  onChange={() => handleSelectReview(item.review.id)}
                   className="mt-1"
                 />
                 <div className="flex-1">
                   <div className="flex items-center justify-between mb-1">
                     <div className="flex items-center gap-2">
-                      <span className="font-medium text-sm">{review.userName}</span>
+                      <span className="font-medium text-sm">{item.client.name}</span>
                       <div className="flex items-center gap-0.5">
                         {[...Array(5)].map((_, i) => (
                           <Star
                             key={i}
                             size={12}
-                            className={i < review.rating ? 'text-yellow-500 fill-yellow-500' : 'text-gray-300'}
+                            className={i < item.review.rating ? 'text-yellow-500 fill-yellow-500' : 'text-gray-300'}
                           />
                         ))}
                       </div>
                     </div>
-                    <span className="text-xs text-gray-400">{review.date}</span>
+                    <span className="text-xs text-gray-400">{new Date(item.review.createdAt).toLocaleDateString()}</span>
                   </div>
-                  <p className="text-sm text-gray-600">{review.comment}</p>
+                  <p className="text-sm text-gray-600">{item.review.comment}</p>
                 </div>
               </div>
             ))}

@@ -46,7 +46,10 @@ export async function apiClient<T>(
     }
   }
 
-  const response = await fetch(endpoint, {
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
+  const url = endpoint.startsWith('http') ? endpoint : `${baseUrl}${endpoint}`;
+
+  const response = await fetch(url, {
     ...fetchOptions,
     headers,
   });
