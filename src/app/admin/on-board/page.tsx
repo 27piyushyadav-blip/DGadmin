@@ -45,6 +45,17 @@ import {
 import { Button } from '@/components/ui/button';
 import { SideModal } from '@/components/common/sideModal';
 import { Menu, MenuItem, ListItemIcon, ListItemText, Divider } from '@mui/material';
+// Add these imports at the top with other imports
+import {
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogFooter,
+  DialogTitle,
+  DialogDescription,
+  DialogClose,
+} from '@/components/ui/dialog';
 
 // Mock data for organisations with experts
 const organisationsData = [
@@ -267,6 +278,36 @@ const [iconDropdownPosition, setIconDropdownPosition] = useState<{ bottom: numbe
 const [activeTab, setActiveTab] = useState<'requested' | 'verified'>('requested');
 const [anchorEl, setAnchorEl] = useState(null);
 const [activeDropdown, setActiveDropdown] = useState(null);
+const [showChangeExpertDPDialog, setShowChangeExpertDPDialog] = useState(false);
+const [showChangeExpertVideoDialog, setShowChangeExpertVideoDialog] = useState(false);
+const [showEditExpertDialog, setShowEditExpertDialog] = useState(false);
+const [showDeleteExpertDialog, setShowDeleteExpertDialog] = useState(false);
+const [showChangeOrgImageDialog, setShowChangeOrgImageDialog] = useState(false);
+const [showEditOrgDialog, setShowEditOrgDialog] = useState(false);
+const [showManageExpertsDialog, setShowManageExpertsDialog] = useState(false);
+const [showDeleteOrgDialog, setShowDeleteOrgDialog] = useState(false);
+
+// Form states
+const [expertFormData, setExpertFormData] = useState({
+  name: '',
+  phone: '',
+  email: '',
+  experience: '',
+  specialities: [] as string[],
+  rating: '',
+  bookings: ''
+});
+const [orgFormData, setOrgFormData] = useState({
+  name: '',
+  phone: '',
+  email: '',
+  address: '',
+  type: ''
+});
+const [selectedExpertFile, setSelectedExpertFile] = useState<File | null>(null);
+const [selectedExpertVideo, setSelectedExpertVideo] = useState<File | null>(null);
+const [selectedOrgImage, setSelectedOrgImage] = useState<File | null>(null);
+const [tempSpeciality, setTempSpeciality] = useState('');
 
 const handleDropdownClick = (label, event) => {
   setAnchorEl(event.currentTarget);
@@ -319,6 +360,109 @@ const getOptionIcon = (option) => {
     case 'Verified': return <CheckCircle className="h-4 w-4" />;
     default: return null;
   }
+};
+
+const handleChangeExpertDP = () => {
+  setShowExpertModal(false);
+  setShowChangeExpertDPDialog(true);
+};
+
+const handleChangeExpertVideo = () => {
+  setShowExpertModal(false);
+  setShowChangeExpertVideoDialog(true);
+};
+
+const handleEditExpert = () => {
+  if (selectedExpert) {
+    setExpertFormData({
+      name: selectedExpert.name || '',
+      phone: selectedExpert.phone || '',
+      email: selectedExpert.email || '',
+      experience: selectedExpert.experience || '',
+      specialities: selectedExpert.specialities || [],
+      rating: selectedExpert.rating?.toString() || '',
+      bookings: selectedExpert.bookings?.toString() || ''
+    });
+    setShowExpertModal(false);
+    setShowEditExpertDialog(true);
+  }
+};
+
+const handleDeleteExpert = () => {
+  setShowExpertModal(false);
+  setShowDeleteExpertDialog(true);
+};
+
+// Organization handlers
+const handleEditOrganization = () => {
+  setOrgFormData({
+    name: selectedExpert?.organisation || '',
+    phone: '+1 234 567 8900',
+    email: 'contact@organization.com',
+    address: '123 Main Street, New York, NY 10001',
+    type: 'Massage Parlour'
+  });
+  setShowExpertModal(false);
+  setShowEditOrgDialog(true);
+};
+
+const handleManageExperts = () => {
+  setShowExpertModal(false);
+  setShowManageExpertsDialog(true);
+};
+
+const handleChangeOrgImage = () => {
+  setShowExpertModal(false);
+  setShowChangeOrgImageDialog(true);
+};
+
+const handleDeleteOrganization = () => {
+  setShowExpertModal(false);
+  setShowDeleteOrgDialog(true);
+};
+
+// Form submission handlers
+const handleSaveExpertChanges = () => {
+  console.log('Saving expert changes:', expertFormData);
+  // API call to update expert
+  setShowEditExpertDialog(false);
+};
+
+const handleSaveOrgChanges = () => {
+  console.log('Saving organization changes:', orgFormData);
+  // API call to update organization
+  setShowEditOrgDialog(false);
+};
+
+const handleConfirmDeleteExpert = () => {
+  console.log('Deleting expert:', selectedExpert?.name);
+  // API call to delete expert
+  setShowDeleteExpertDialog(false);
+  setSelectedExpert(null);
+};
+
+const handleConfirmDeleteOrg = () => {
+  console.log('Deleting organization:', selectedExpert?.organisation);
+  // API call to delete organization
+  setShowDeleteOrgDialog(false);
+  setShowExpertModal(false);
+};
+
+const handleAddSpeciality = () => {
+  if (tempSpeciality.trim() && !expertFormData.specialities.includes(tempSpeciality.trim())) {
+    setExpertFormData({
+      ...expertFormData,
+      specialities: [...expertFormData.specialities, tempSpeciality.trim()]
+    });
+    setTempSpeciality('');
+  }
+};
+
+const handleRemoveSpeciality = (speciality: string) => {
+  setExpertFormData({
+    ...expertFormData,
+    specialities: expertFormData.specialities.filter(s => s !== speciality)
+  });
 };
 
   return (
@@ -465,7 +609,7 @@ const getOptionIcon = (option) => {
                             {org.status}
                         </span>
                         </div>
-                        <button className="text-xs text-blue-600 hover:text-blue-700 font-medium" onClick={()=>setShowExpertModal(true)}>
+                        <button className="text-xs text-blue-600 hover:text-blue-700 font-medium" onClick={()=>(setShowExpertModal(true),setSelectedExpert(null))}>
                             VIEW ORGANIZATION
                             <ChevronRight size={14} className="inline-block ml-1" />
                         </button>
@@ -733,22 +877,34 @@ const getOptionIcon = (option) => {
 
       {/* Action Buttons */}
       <div className="border-t border-gray-200 pt-4 space-y-2">
-        <button className="w-full text-left py-2 px-3 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors flex items-center gap-2">
-          <Image size={16} />
-          Change Profile Picture
-        </button>
-        <button className="w-full text-left py-2 px-3 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors flex items-center gap-2">
-          <Video size={16} />
-          Change Intro Video
-        </button>
-        <button className="w-full text-left py-2 px-3 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors flex items-center gap-2">
-          <Edit3 size={16} />
-          Edit Profile Details
-        </button>
-        <button className="w-full text-left py-2 px-3 text-red-600 hover:bg-red-50 rounded-lg transition-colors flex items-center gap-2">
-          <Trash2 size={16} />
-          Delete Expert
-        </button>
+        <button 
+  className="w-full text-left py-2 px-3 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors flex items-center gap-2"
+  onClick={handleChangeExpertDP}
+>
+  <Image size={16} />
+  Change Profile Picture
+</button>
+<button 
+  className="w-full text-left py-2 px-3 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors flex items-center gap-2"
+  onClick={handleChangeExpertVideo}
+>
+  <Video size={16} />
+  Change Intro Video
+</button>
+<button 
+  className="w-full text-left py-2 px-3 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors flex items-center gap-2"
+  onClick={handleEditExpert}
+>
+  <Edit3 size={16} />
+  Edit Profile Details
+</button>
+<button 
+  className="w-full text-left py-2 px-3 text-red-600 hover:bg-red-50 rounded-lg transition-colors flex items-center gap-2"
+  onClick={handleDeleteExpert}
+>
+  <Trash2 size={16} />
+  Delete Expert
+</button>
       </div>
     </>
   ) : (
@@ -829,28 +985,464 @@ const getOptionIcon = (option) => {
 
       {/* Action Buttons for Organization */}
       <div className="border-t border-gray-200 pt-4 space-y-2">
-        <button className="w-full text-left py-2 px-3 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors flex items-center gap-2">
-          <Building2 size={16} />
-          Edit Organization Details
-        </button>
-        <button className="w-full text-left py-2 px-3 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors flex items-center gap-2">
-          <Users size={16} />
-          Manage Experts
-        </button>
-        <button className="w-full text-left py-2 px-3 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors flex items-center gap-2">
-          <Image size={16} />
-          Change Organization Image
-        </button>
-        <button className="w-full text-left py-2 px-3 text-red-600 hover:bg-red-50 rounded-lg transition-colors flex items-center gap-2">
-          <Trash2 size={16} />
-          Delete Organization
-        </button>
+       <button 
+  className="w-full text-left py-2 px-3 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors flex items-center gap-2"
+  onClick={handleEditOrganization}
+>
+  <Building2 size={16} />
+  Edit Organization Details
+</button>
+<button 
+  className="w-full text-left py-2 px-3 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors flex items-center gap-2"
+  onClick={handleManageExperts}
+>
+  <Users size={16} />
+  Manage Experts
+</button>
+<button 
+  className="w-full text-left py-2 px-3 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors flex items-center gap-2"
+  onClick={handleChangeOrgImage}
+>
+  <Image size={16} />
+  Change Organization Image
+</button>
+<button 
+  className="w-full text-left py-2 px-3 text-red-600 hover:bg-red-50 rounded-lg transition-colors flex items-center gap-2"
+  onClick={handleDeleteOrganization}
+>
+  <Trash2 size={16} />
+  Delete Organization
+</button>
       </div>
     </>
   )}
 </SideModal>
 
+<Dialog open={showChangeExpertDPDialog} onOpenChange={setShowChangeExpertDPDialog}>
+  <DialogContent>
+    <DialogHeader>
+      <DialogTitle>Change Profile Picture</DialogTitle>
+      <DialogDescription>
+        Upload a new profile picture for {selectedExpert?.name}
+      </DialogDescription>
+    </DialogHeader>
+    <div className="py-4">
+      <div className="flex items-center justify-center mb-4">
+        {selectedExpertFile ? (
+          <img
+            src={URL.createObjectURL(selectedExpertFile)}
+            alt="Preview"
+            className="w-32 h-32 rounded-full object-cover"
+          />
+        ) : (
+          <img
+            src={selectedExpert?.image}
+            alt={selectedExpert?.name}
+            className="w-32 h-32 rounded-full object-cover"
+          />
+        )}
+      </div>
+      <input
+        type="file"
+        accept="image/*"
+        onChange={(e) => {
+          if (e.target.files && e.target.files[0]) {
+            setSelectedExpertFile(e.target.files[0]);
+          }
+        }}
+        className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+      />
+    </div>
+    <DialogFooter>
+      <DialogClose variant="outline">Cancel</DialogClose>
+      <Button 
+        onClick={() => {
+          console.log('Uploading DP:', selectedExpertFile?.name);
+          setShowChangeExpertDPDialog(false);
+          setSelectedExpertFile(null);
+        }}
+        disabled={!selectedExpertFile}
+      >
+        Upload
+      </Button>
+    </DialogFooter>
+  </DialogContent>
+</Dialog>
 
+{/* Change Expert Video Dialog */}
+<Dialog open={showChangeExpertVideoDialog} onOpenChange={setShowChangeExpertVideoDialog}>
+  <DialogContent>
+    <DialogHeader>
+      <DialogTitle>Change Intro Video</DialogTitle>
+      <DialogDescription>
+        Upload a new intro video for {selectedExpert?.name}
+      </DialogDescription>
+    </DialogHeader>
+    <div className="py-4">
+      {selectedExpertVideo && (
+        <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+          <video className="w-full rounded-lg" controls>
+            <source src={URL.createObjectURL(selectedExpertVideo)} />
+          </video>
+          <p className="text-xs text-gray-500 mt-2">{selectedExpertVideo.name}</p>
+        </div>
+      )}
+      <input
+        type="file"
+        accept="video/*"
+        onChange={(e) => {
+          if (e.target.files && e.target.files[0]) {
+            setSelectedExpertVideo(e.target.files[0]);
+          }
+        }}
+        className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+      />
+    </div>
+    <DialogFooter>
+      <DialogClose variant="outline">Cancel</DialogClose>
+      <Button 
+        onClick={() => {
+          console.log('Uploading Video:', selectedExpertVideo?.name);
+          setShowChangeExpertVideoDialog(false);
+          setSelectedExpertVideo(null);
+        }}
+        disabled={!selectedExpertVideo}
+      >
+        Upload Video
+      </Button>
+    </DialogFooter>
+  </DialogContent>
+</Dialog>
+
+{/* Edit Expert Details Dialog */}
+<Dialog open={showEditExpertDialog} onOpenChange={setShowEditExpertDialog}>
+  <DialogContent className="max-w-lg">
+    <DialogHeader>
+      <DialogTitle>Edit Expert Details</DialogTitle>
+      <DialogDescription>
+        Update profile information for {selectedExpert?.name}
+      </DialogDescription>
+    </DialogHeader>
+    <div className="py-4 space-y-4 max-h-96 overflow-y-auto">
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+        <input
+          type="text"
+          value={expertFormData.name}
+          onChange={(e) => setExpertFormData({...expertFormData, name: e.target.value})}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+        <input
+          type="tel"
+          value={expertFormData.phone}
+          onChange={(e) => setExpertFormData({...expertFormData, phone: e.target.value})}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+        <input
+          type="email"
+          value={expertFormData.email}
+          onChange={(e) => setExpertFormData({...expertFormData, email: e.target.value})}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Experience</label>
+        <input
+          type="text"
+          value={expertFormData.experience}
+          onChange={(e) => setExpertFormData({...expertFormData, experience: e.target.value})}
+          placeholder="e.g., 5 yrs"
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Specialities</label>
+        <div className="flex gap-2 mb-2">
+          <input
+            type="text"
+            value={tempSpeciality}
+            onChange={(e) => setTempSpeciality(e.target.value)}
+            placeholder="Add speciality"
+            className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            onKeyPress={(e) => e.key === 'Enter' && handleAddSpeciality()}
+          />
+          <Button type="button" onClick={handleAddSpeciality}>Add</Button>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {expertFormData.specialities.map((spec, idx) => (
+            <span key={idx} className="px-2 py-1 bg-blue-50 text-blue-700 text-xs rounded-full flex items-center gap-1">
+              {spec}
+              <button onClick={() => handleRemoveSpeciality(spec)} className="hover:text-red-600">
+                <X size={12} />
+              </button>
+            </span>
+          ))}
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Rating</label>
+          <input
+            type="number"
+            step="0.1"
+            value={expertFormData.rating}
+            onChange={(e) => setExpertFormData({...expertFormData, rating: e.target.value})}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Total Bookings</label>
+          <input
+            type="number"
+            value={expertFormData.bookings}
+            onChange={(e) => setExpertFormData({...expertFormData, bookings: e.target.value})}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+      </div>
+    </div>
+    <DialogFooter>
+      <DialogClose variant="outline">Cancel</DialogClose>
+      <Button onClick={handleSaveExpertChanges}>Save Changes</Button>
+    </DialogFooter>
+  </DialogContent>
+</Dialog>
+
+{/* Delete Expert Confirmation Dialog */}
+<Dialog open={showDeleteExpertDialog} onOpenChange={setShowDeleteExpertDialog}>
+  <DialogContent>
+    <DialogHeader>
+      <DialogTitle>Delete Expert</DialogTitle>
+      <DialogDescription>
+        Are you sure you want to delete "{selectedExpert?.name}"? This action cannot be undone.
+      </DialogDescription>
+    </DialogHeader>
+    <div className="py-4">
+      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+        <p className="text-sm text-red-800">
+          This will permanently delete:
+        </p>
+        <ul className="list-disc list-inside text-sm text-red-700 mt-2 space-y-1">
+          <li>All expert profile information</li>
+          <li>All bookings and appointments</li>
+          <li>All reviews and ratings</li>
+          <li>Associated service history</li>
+        </ul>
+      </div>
+    </div>
+    <DialogFooter>
+      <DialogClose variant="outline">Cancel</DialogClose>
+      <Button variant="destructive" onClick={handleConfirmDeleteExpert}>
+        Yes, Delete Expert
+      </Button>
+    </DialogFooter>
+  </DialogContent>
+</Dialog>
+
+{/* Change Organization Image Dialog */}
+<Dialog open={showChangeOrgImageDialog} onOpenChange={setShowChangeOrgImageDialog}>
+  <DialogContent>
+    <DialogHeader>
+      <DialogTitle>Change Organization Image</DialogTitle>
+      <DialogDescription>
+        Upload a new image for {selectedExpert?.organisation}
+      </DialogDescription>
+    </DialogHeader>
+    <div className="py-4">
+      <div className="flex items-center justify-center mb-4">
+        {selectedOrgImage ? (
+          <img
+            src={URL.createObjectURL(selectedOrgImage)}
+            alt="Preview"
+            className="w-32 h-32 rounded-lg object-cover"
+          />
+        ) : (
+          <img
+            src={selectedExpert?.organisationImage}
+            alt={selectedExpert?.organisation}
+            className="w-32 h-32 rounded-lg object-cover"
+          />
+        )}
+      </div>
+      <input
+        type="file"
+        accept="image/*"
+        onChange={(e) => {
+          if (e.target.files && e.target.files[0]) {
+            setSelectedOrgImage(e.target.files[0]);
+          }
+        }}
+        className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+      />
+    </div>
+    <DialogFooter>
+      <DialogClose variant="outline">Cancel</DialogClose>
+      <Button 
+        onClick={() => {
+          console.log('Uploading Org Image:', selectedOrgImage?.name);
+          setShowChangeOrgImageDialog(false);
+          setSelectedOrgImage(null);
+        }}
+        disabled={!selectedOrgImage}
+      >
+        Upload Image
+      </Button>
+    </DialogFooter>
+  </DialogContent>
+</Dialog>
+
+{/* Edit Organization Details Dialog */}
+<Dialog open={showEditOrgDialog} onOpenChange={setShowEditOrgDialog}>
+  <DialogContent className="max-w-lg">
+    <DialogHeader>
+      <DialogTitle>Edit Organization Details</DialogTitle>
+      <DialogDescription>
+        Update information for {selectedExpert?.organisation}
+      </DialogDescription>
+    </DialogHeader>
+    <div className="py-4 space-y-4">
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Organization Name</label>
+        <input
+          type="text"
+          value={orgFormData.name}
+          onChange={(e) => setOrgFormData({...orgFormData, name: e.target.value})}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Organization Type</label>
+        <input
+          type="text"
+          value={orgFormData.type}
+          onChange={(e) => setOrgFormData({...orgFormData, type: e.target.value})}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+        <input
+          type="tel"
+          value={orgFormData.phone}
+          onChange={(e) => setOrgFormData({...orgFormData, phone: e.target.value})}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+        <input
+          type="email"
+          value={orgFormData.email}
+          onChange={(e) => setOrgFormData({...orgFormData, email: e.target.value})}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Address</label>
+        <textarea
+          value={orgFormData.address}
+          onChange={(e) => setOrgFormData({...orgFormData, address: e.target.value})}
+          rows={3}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+    </div>
+    <DialogFooter>
+      <DialogClose variant="outline">Cancel</DialogClose>
+      <Button onClick={handleSaveOrgChanges}>Save Changes</Button>
+    </DialogFooter>
+  </DialogContent>
+</Dialog>
+
+{/* Manage Experts Dialog */}
+<Dialog open={showManageExpertsDialog} onOpenChange={setShowManageExpertsDialog}>
+  <DialogContent className="max-w-2xl">
+    <DialogHeader>
+      <DialogTitle>Manage Experts</DialogTitle>
+      <DialogDescription>
+        Manage all experts working at {selectedExpert?.organisation}
+      </DialogDescription>
+    </DialogHeader>
+    <div className="py-4">
+      <div className="space-y-3 max-h-96 overflow-y-auto">
+        {organisationsData
+          .find(org => org.name === selectedExpert?.organisation)
+          ?.experts.map((expert) => (
+            <div key={expert.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+              <img
+                src={expert.image}
+                alt={expert.name}
+                className="w-10 h-10 rounded-full object-cover"
+              />
+              <div className="flex-1">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium text-gray-900">{expert.name}</p>
+                    <div className="flex items-center gap-2 text-xs text-gray-500">
+                      <span>Rating: {expert.rating} ⭐</span>
+                      <span>{expert.bookings} bookings</span>
+                      <span>{expert.experience}</span>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline">Edit</Button>
+                    <Button size="sm" variant="destructive">Remove</Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+      </div>
+      <div className="mt-4 pt-4 border-t border-gray-200">
+        <Button className="w-full" variant="outline">
+          <Plus size={16} className="mr-2" />
+          Add New Expert
+        </Button>
+      </div>
+    </div>
+    <DialogFooter>
+      <DialogClose variant="outline">Close</DialogClose>
+    </DialogFooter>
+  </DialogContent>
+</Dialog>
+
+{/* Delete Organization Confirmation Dialog */}
+<Dialog open={showDeleteOrgDialog} onOpenChange={setShowDeleteOrgDialog}>
+  <DialogContent>
+    <DialogHeader>
+      <DialogTitle>Delete Organization</DialogTitle>
+      <DialogDescription>
+        Are you sure you want to delete "{selectedExpert?.organisation}"? This action cannot be undone.
+      </DialogDescription>
+    </DialogHeader>
+    <div className="py-4">
+      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+        <p className="text-sm text-red-800">
+          This will permanently delete:
+        </p>
+        <ul className="list-disc list-inside text-sm text-red-700 mt-2 space-y-1">
+          <li>All organization information</li>
+          <li>All experts associated with this organization</li>
+          <li>All services, bookings, and transactions</li>
+          <li>All reviews and ratings</li>
+          <li>All customer data related to this organization</li>
+        </ul>
+      </div>
+    </div>
+    <DialogFooter>
+      <DialogClose variant="outline">Cancel</DialogClose>
+      <Button variant="destructive" onClick={handleConfirmDeleteOrg}>
+        Yes, Delete Organization
+      </Button>
+    </DialogFooter>
+  </DialogContent>
+</Dialog>
     </div>
   );
 }
