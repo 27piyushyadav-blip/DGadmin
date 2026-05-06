@@ -1,7 +1,9 @@
 // app/admin/experts/page.tsx
 'use client';
 
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
+import { apiClient } from '@/client/api/api-client';
+import { toast } from 'sonner';
 import {
   Building2,
   Users,
@@ -271,69 +273,117 @@ export default function ExpertManagement() {
   const [filterOpen, setFilterOpen] = useState(false);
   const [selectedExpert, setSelectedExpert] = useState<any>(null);
   const [showExpertModal, setShowExpertModal] = useState(false);
-  const [openExpertDropdownId, setOpenExpertDropdownId] = useState<number | null>(null);
-  const [openOrgDropdownId, setOpenOrgDropdownId] = useState<number | null>(null);
+  const [openExpertDropdownId, setOpenExpertDropdownId] = useState<string | null>(null);
+  const [openOrgDropdownId, setOpenOrgDropdownId] = useState<string | null>(null);
   const [dropdownPosition, setDropdownPosition] = useState<{ bottom: number; right: number } | null>(null);
-    const buttonRefs = useRef<{ [key: number]: HTMLButtonElement | null }>({});
-   // Add this state at the top with your other useState declarations:
-const [openIconDropdown, setOpenIconDropdown] = useState<string | null>(null);
-const [iconDropdownPosition, setIconDropdownPosition] = useState<{ bottom: number; left: number } | null>(null);
-// Add this state with your other useState declarations:
-const [anchorEl, setAnchorEl] = useState(null);
-const [activeDropdown, setActiveDropdown] = useState(null);
-const [showChangeOrgImageDialog, setShowChangeOrgImageDialog] = useState(false);
-const [showEditOrgDialog, setShowEditOrgDialog] = useState(false);
-const [showManageExpertsDialog, setShowManageExpertsDialog] = useState(false);
-const [showDeleteOrgDialog, setShowDeleteOrgDialog] = useState(false);
-
-
-const [orgFormData, setOrgFormData] = useState({
-  name: '',
-  phone: '',
-  email: '',
-  address: '',
-  type: ''
-});
-const [selectedOrgImage, setSelectedOrgImage] = useState<File | null>(null);
-
-
-
-const handleDropdownClose = () => {
-  setAnchorEl(null);
-  setActiveDropdown(null);
-};
-
-const handleOptionSelect = (label, option) => {
-  console.log(`Selected ${option} for ${label}`);
-  // Add your logic here
-  handleDropdownClose();
-};
-
-
-// Add this helper function:
-const toggleIconDropdown = (label: string, event: React.MouseEvent) => {
-  const rect = event.currentTarget.getBoundingClientRect();
+  const buttonRefs = useRef<{ [key: string]: HTMLButtonElement | null }>({});
   
-  if (openIconDropdown === label) {
-    setOpenIconDropdown(null);
-    setIconDropdownPosition(null);
-  } else {
-    // Position above the icon (centered)
-    setIconDropdownPosition({
-      bottom: window.innerHeight - rect.bottom - 90, // 10px above the icon
-      left: rect.left + (rect.width / 2) - 60, // 96px is half of w-48 (192px/2)
-    });
-    setOpenIconDropdown(label);
-  }
-};
+  const [organisationsData, setOrganisationsData] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Add this filtered orgs logic (replace your existing filteredOrgs):
-const filteredOrgs = organisationsData.filter(org => {
-  const matchesSearch = org.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                        org.experts.some(expert => expert.name.toLowerCase().includes(searchTerm.toLowerCase()));
-  const matchesOrg = selectedOrgFilter === 'All Organisations' || org.name === selectedOrgFilter;
-  return matchesSearch && matchesOrg;
-});
+  const [showChangeOrgImageDialog, setShowChangeOrgImageDialog] = useState(false);
+  const [showEditOrgDialog, setShowEditOrgDialog] = useState(false);
+  const [showManageExpertsDialog, setShowManageExpertsDialog] = useState(false);
+  const [showDeleteOrgDialog, setShowDeleteOrgDialog] = useState(false);
+
+  const [orgFormData, setOrgFormData] = useState({
+    name: '',
+    phone: '',
+    email: '',
+    address: '',
+    type: ''
+  });
+  const [selectedOrgImage, setSelectedOrgImage] = useState<File | null>(null);
+
+  const fetchOrganisations = async () => {
+    setIsLoading(true);
+    try {
+      const response = await apiClient<{ organizations: any[] }>('/admin/organizations');
+      setOrganisationsData(response.organizations || []);
+    } catch (error) {
+      toast.error('Failed to fetch organizations');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchOrganisations();
+  }, []);
+
+  const handleToggleMessaging = async (orgId: string, currentStatus: boolean) => {
+    try {
+      await apiClient(`/admin/organizations/${orgId}/messaging-toggle`, {
+        method: 'POST',
+        body: JSON.stringify({ isDisabled: !currentStatus }),
+      });
+      toast.success(`Messaging ${!currentStatus ? 'held' : 'enabled'} successfully`);
+      fetchOrganisations();
+    } catch (error) {
+      toast.error('Failed to update messaging status');
+    }
+  };
+
+  const handleToggleHold = async (orgId: string, currentStatus: boolean) => {
+    try {
+      await apiClient(`/admin/organizations/${orgId}/hold`, {
+        method: 'POST',
+        body: JSON.stringify({ isBlocked: !currentStatus }),
+      });
+      toast.success(`Account ${!currentStatus ? 'held' : 'unheld'} successfully`);
+      fetchOrganisations();
+    } catch (error) {
+      toast.error('Failed to update account status');
+    }
+  };
+
+  const handleTimedHold = async (orgId: string, minutes: number) => {
+    try {
+      await apiClient(`/admin/organizations/${orgId}/hold`, {
+        method: 'POST',
+        body: JSON.stringify({ isBlocked: true, durationMinutes: minutes }),
+      });
+      toast.success(`Account held for ${minutes < 60 ? minutes + ' minutes' : (minutes/60) + ' hours'}`);
+      setOpenOrgDropdownId(null);
+      fetchOrganisations();
+    } catch (error) {
+      toast.error('Failed to apply timed hold');
+    }
+  };
+
+  const handleRefund = async (orgId: string) => {
+    // In a real app, this might open a dialog first
+    try {
+      await apiClient(`/admin/organizations/${orgId}/refund`, {
+        method: 'POST',
+        body: JSON.stringify({ amount: 0, reason: 'Admin requested refund' }),
+      });
+      toast.success('Refund request submitted');
+    } catch (error) {
+      toast.error('Failed to submit refund request');
+    }
+  };
+
+  const handleToggleVisibility = async (orgId: string, currentVisibility: boolean) => {
+    try {
+      await apiClient(`/admin/organizations/${orgId}`, {
+        method: 'PUT',
+        body: JSON.stringify({ isVisible: !currentVisibility }),
+      });
+      toast.success(`Account ${!currentVisibility ? 'shown' : 'hidden'} successfully`);
+      setOpenOrgDropdownId(null);
+      fetchOrganisations();
+    } catch (error) {
+      toast.error('Failed to update visibility');
+    }
+  };
+
+  const filteredOrgs = organisationsData.filter(org => {
+    const matchesSearch = org.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          (org.experts && org.experts.some(expert => expert.name.toLowerCase().includes(searchTerm.toLowerCase())));
+    const matchesOrg = selectedOrgFilter === 'All Organisations' || org.name === selectedOrgFilter;
+    return matchesSearch && matchesOrg;
+  });
 
 const getOptionIcon = (option) => {
   switch(option) {
@@ -483,21 +533,26 @@ const handleConfirmDeleteOrg = () => {
                 key={org.id}
                 className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow"
             >
-                {/* Organisation Header */}
                 <div className="p-5 pb-3 border-b border-gray-100">
                 <div className="flex items-start gap-3">
-                    <img
-                    src={org.image}
-                    alt={org.name}
-                    className="w-12 h-12 rounded-lg object-cover"
-                    />
+                    {org.logo ? (
+                      <img
+                        src={org.logo}
+                        alt={org.name}
+                        className="w-12 h-12 rounded-lg object-cover"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-lg">
+                        {org.name.charAt(0)}
+                      </div>
+                    )}
                     <div className="flex-1">
                     <div className="flex items-start justify-between">
                         <div>
                         <h3 className="font-semibold text-gray-900">{org.name}</h3>
                         <div className="flex items-center gap-2 mt-0.5">
                             <Briefcase size={12} className="text-gray-400" />
-                            <span className="text-xs text-gray-500">{org.type}</span>
+                            <span className="text-xs text-gray-500">{org.industry || 'Organization'}</span>
                         </div>
                         </div>
                         {/* Dropdown */}
@@ -508,23 +563,31 @@ const handleConfirmDeleteOrg = () => {
                             className="text-gray-400 cursor-pointer hover:text-gray-600" 
                             onClick={(e) => {
                                 e.stopPropagation();
-                                setOpenOrgDropdownId(openOrgDropdownId === org.id ? null : org.id);
+                                setOpenOrgDropdownId(openOrgDropdownId === org.orgId ? null : org.orgId);
                             }}
                             />
-                            {openOrgDropdownId === org.id && (
+                            {openOrgDropdownId === org.orgId && (
                             <div className="absolute right-0 top-6 z-50 w-48 bg-white border border-gray-200 rounded-md shadow-lg py-1">
                                 <div className="px-1 py-1 text-sm text-gray-700">
-                                <div className="flex items-center px-2 py-2 hover:bg-gray-100 cursor-pointer rounded">
-                                    <Clock className="mr-2 h-4 w-4" />
-                                    30 minuetes pause
+                                <div className="flex items-center px-2 py-2 hover:bg-gray-100 cursor-pointer rounded" onClick={() => handleTimedHold(org.orgId, 30)}>
+                                    <Clock className="mr-2 h-4 w-4 text-blue-500" />
+                                    30 minutes pause
                                 </div>
-                                <div className="flex items-center px-2 py-2 hover:bg-gray-100 cursor-pointer rounded">
-                                    <PauseCircle className="mr-2 h-4 w-4" />
+                                <div className="flex items-center px-2 py-2 hover:bg-gray-100 cursor-pointer rounded" onClick={() => handleTimedHold(org.orgId, 720)}>
+                                    <PauseCircle className="mr-2 h-4 w-4 text-yellow-500" />
                                     12 hours hold
                                 </div>
-                                <div className="flex items-center px-2 py-2 hover:bg-gray-100 cursor-pointer rounded text-red-600">
-                                    <EyeOff className="mr-2 h-4 w-4" />
-                                    Hide account
+                                <div className="flex items-center px-2 py-2 hover:bg-gray-100 cursor-pointer rounded" onClick={() => handleTimedHold(org.orgId, 0)}>
+                                    <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
+                                    Release Hold
+                                </div>
+                                <div className="border-t border-gray-100 my-1"></div>
+                                <div className="flex items-center px-2 py-2 hover:bg-gray-100 cursor-pointer rounded text-gray-700" onClick={() => handleToggleVisibility(org.orgId, !!org.isVisible)}>
+                                    {org.isVisible ? (
+                                      <><EyeOff className="mr-2 h-4 w-4" />Hide account</>
+                                    ) : (
+                                      <><Eye className="mr-2 h-4 w-4" />Show account</>
+                                    )}
                                 </div>
                                 </div>
                             </div>
@@ -694,17 +757,38 @@ const handleConfirmDeleteOrg = () => {
                 <div className="p-5 pb-3 border-t    border-gray-100">
                     <div className="flex items-center justify-between gap-3 mt-1 relative">
                         {[
-                        { icon: BadgeDollarSign, label: "Request Refund",color: 'text-red-500' },
-                        { icon: MessageCircleX, label: "Hold Message", color: 'text-yellow-500' },
-                        { icon: BadgeAlert, label: "Hold Account", color: 'text-orange-500' },
-                        ].map(({ icon: Icon, label, color }) => (
-                        <div key={label} className="relative flex flex-col items-center group">
+                        { 
+                            icon: BadgeDollarSign, 
+                            label: "Request Refund", 
+                            color: 'text-red-500', 
+                            bg: 'bg-red-50', 
+                            hover: 'hover:bg-red-100',
+                            onClick: () => handleRefund(org.orgId)
+                        },
+                        { 
+                            icon: MessageCircleX, 
+                            label: org.messagingDisabled ? "Enable Msg" : "Hold Message", 
+                            color: org.messagingDisabled ? 'text-green-500' : 'text-yellow-600', 
+                            bg: org.messagingDisabled ? 'bg-green-50' : 'bg-yellow-50', 
+                            hover: org.messagingDisabled ? 'hover:bg-green-100' : 'hover:bg-yellow-100',
+                            onClick: () => handleToggleMessaging(org.orgId, !!org.messagingDisabled)
+                        },
+                        { 
+                            icon: BadgeAlert, 
+                            label: org.isBlocked ? "Release Acc" : "Hold Account", 
+                            color: org.isBlocked ? 'text-green-500' : 'text-orange-500', 
+                            bg: org.isBlocked ? 'bg-green-50' : 'bg-orange-50', 
+                            hover: org.isBlocked ? 'hover:bg-green-100' : 'hover:bg-orange-100',
+                            onClick: () => handleToggleHold(org.orgId, !!org.isBlocked)
+                        },
+                        ].map(({ icon: Icon, label, color, bg, hover, onClick }) => (
+                        <div key={label} className="relative flex-1 flex flex-col items-center group">
                             <div 
-                            className='flex items-center gap-2 bg-gray-200 p-1 rounded cursor-pointer hover:bg-gray-300 transition-colors'
-                            
+                            className={`flex items-center justify-center gap-2 ${bg} ${hover} p-2 rounded-lg cursor-pointer transition-all w-full`}
+                            onClick={onClick}
                             >
                             <Icon className={`h-4 w-4 ${color}`} />
-                            <p className={`text-[10px] text-${color.split('-')[1]}-500`}>{label}</p>
+                            <p className={`text-[10px] font-medium ${color}`}>{label}</p>
                             </div>
                         </div>
                         ))}

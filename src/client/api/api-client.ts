@@ -72,7 +72,7 @@ export async function apiClient<T>(
       subscribeTokenRefresh(async (newToken: string) => {
         try {
           headers.set("Authorization", `Bearer ${newToken}`);
-          const retryResponse = await fetch(endpoint, {
+          const retryResponse = await fetch(url, {
             ...fetchOptions,
             headers,
           });

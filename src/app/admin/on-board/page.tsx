@@ -40,7 +40,8 @@ import {
   Hourglass,
   XCircle,
   Circle,
-  CircleDotIcon
+  CircleDotIcon,
+  Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SideModal } from '@/components/common/sideModal';
@@ -57,208 +58,43 @@ import {
   DialogClose,
 } from '@/components/ui/dialog';
 
-// Mock data for organisations with experts
-const organisationsData = [
-  {
-    id: 1,
-    name: 'Losi Hair Cutting',
-    type: 'Massage Parlour',
-    status: 'Pending',
-    image: 'https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=100&h=100&fit=crop',
-    experts: [
-      {
-        id: 101,
-        name: 'Georgina Kate',
-        rating: 4.8,
-        bookings: 90,
-        experience: '2.8 yrs',
-        image: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&h=80&fit=crop',
-        verified: true,
-        phone: '+1 234 567 8900',
-        email: 'georgina@losihair.com',
-        specialities: ['Hair Styling', 'Color Treatment']
-      },
-      {
-        id: 102,
-        name: 'Michael Brooks',
-        rating: 4.6,
-        bookings: 93,
-        experience: '7 yrs',
-        image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&h=80&fit=crop',
-        verified: true,
-        phone: '+1 234 567 8901',
-        email: 'michael@losihair.com',
-        specialities: ['Men\'s Grooming', 'Beard Styling']
-      },
-      {
-        id: 103,
-        name: 'Georgina Kate',
-        rating: 4.8,
-        bookings: 90,
-        experience: '2.8 yrs',
-        image: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&h=80&fit=crop',
-        verified: true,
-        phone: '+1 234 567 8900',
-        email: 'georgina@losihair.com',
-        specialities: ['Hair Styling', 'Color Treatment']
-      },
-      {
-        id: 104,
-        name: 'Georgina Kate',
-        rating: 4.8,
-        bookings: 90,
-        experience: '2.8 yrs',
-        image: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&h=80&fit=crop',
-        verified: true,
-        phone: '+1 234 567 8900',
-        email: 'georgina@losihair.com',
-        specialities: ['Hair Styling', 'Color Treatment']
-      },
-    ]
-  },
-  {
-    id: 2,
-    name: 'Relax Massage',
-    type: 'Massage Parlour',
-    status: 'Active',
-    image: 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=100&h=100&fit=crop',
-    experts: [
-      {
-        id: 201,
-        name: 'Amelia Levantine',
-        rating: 4.9,
-        bookings: 87,
-        experience: '5 yrs',
-        image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&h=80&fit=crop',
-        verified: true,
-        phone: '+1 234 567 8902',
-        email: 'amelia@relaxmassage.com',
-        specialities: ['Swedish Massage', 'Deep Tissue']
-      },
-      {
-        id: 202,
-        name: 'Sarah Johnson',
-        rating: 4.7,
-        bookings: 76,
-        experience: '4 yrs',
-        image: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=80&h=80&fit=crop',
-        verified: false,
-        phone: '+1 234 567 8903',
-        email: 'sarah@relaxmassage.com',
-        specialities: ['Hot Stone', 'Aromatherapy']
-      },
-       {
-        id: 203,
-        name: 'Georgina Kate',
-        rating: 4.8,
-        bookings: 90,
-        experience: '2.8 yrs',
-        image: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&h=80&fit=crop',
-        verified: true,
-        phone: '+1 234 567 8900',
-        email: 'georgina@losihair.com',
-        specialities: ['Hair Styling', 'Color Treatment']
-      }
+import { apiClient } from '@/client/api/api-client';
+import { toast } from 'sonner';
+import { useEffect } from 'react';
+import { Badge } from '@/components/ui/badge';
 
-    ]
-  },
-  {
-    id: 3,
-    name: 'Bliss Spa',
-    type: 'Massage Parlour',
-    status: 'Active',
-    image: 'https://images.unsplash.com/photo-1527799820374-dcf8d9d4a0b9?w=100&h=100&fit=crop',
-    experts: [
-      {
-        id: 301,
-        name: 'Michael Brooks',
-        rating: 4.6,
-        bookings: 93,
-        experience: '7 yrs',
-        image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&h=80&fit=crop',
-        verified: true,
-        phone: '+1 234 567 8904',
-        email: 'michael@blisspa.com',
-        specialities: ['Sports Massage', 'Cupping']
-      },
-      {
-        id: 302,
-        name: 'Emma Watson',
-        rating: 4.8,
-        bookings: 104,
-        experience: '6 yrs',
-        image: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=80&h=80&fit=crop',
-        verified: true,
-        phone: '+1 234 567 8905',
-        email: 'emma@blisspa.com',
-        specialities: ['Thai Massage', 'Reflexology']
-      }
-    ]
-  },
-  {
-    id: 4,
-    name: 'Heaven Touch',
-    type: 'Massage Parlour',
-    status: 'Pending',
-    image: 'https://images.unsplash.com/photo-1515377905703-c4788e51af15?w=100&h=100&fit=crop',
-    experts: [
-      {
-        id: 401,
-        name: 'Amelia Levantine',
-        rating: 4.8,
-        bookings: 87,
-        experience: '5 yrs',
-        image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&h=80&fit=crop',
-        verified: true,
-        phone: '+1 234 567 8906',
-        email: 'amelia@heaventouch.com',
-        specialities: ['Shiatsu', 'Chair Massage']
-      }
-    ]
-  },
-  {
-    id: 5,
-    name: 'Golden Hands',
-    type: 'Massage Parlour',
-    status: 'Active',
-    image: 'https://images.unsplash.com/photo-1590559899731-a382839e5547?w=100&h=100&fit=crop',
-    experts: [
-      {
-        id: 501,
-        name: 'Michael Brooks',
-        rating: 4.6,
-        bookings: 93,
-        experience: '7 yrs',
-        image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&h=80&fit=crop',
-        verified: true,
-        phone: '+1 234 567 8907',
-        email: 'michael@goldenhands.com',
-        specialities: ['Lymphatic Drainage', 'Manual Therapy']
-      }
-    ]
-  },
-  {
-    id: 6,
-    name: 'Zen Body Care',
-    type: 'Massage Parlour',
-    status: 'Active',
-    image: 'https://images.unsplash.com/photo-1600334129128-685c5582fd35?w=100&h=100&fit=crop',
-    experts: [
-      {
-        id: 601,
-        name: 'Amelia Levantine',
-        rating: 4.8,
-        bookings: 87,
-        experience: '5 yrs',
-        image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&h=80&fit=crop',
-        verified: true,
-        phone: '+1 234 567 8908',
-        email: 'amelia@zenbodycare.com',
-        specialities: ['Prenatal Massage', 'Couples Massage']
-      }
-    ]
-  }
-];
+// Types for our API data
+interface Expert {
+  expertId: string;
+  name: string;
+  email: string;
+  category: string;
+  experience: string;
+  rating: number;
+  totalBookings: number;
+  revenue: number;
+  status: string;
+  isVisible: boolean;
+  image?: string;
+  phone?: string;
+  specialities?: string[];
+}
+
+interface Organization {
+  orgId: string;
+  name: string;
+  email: string;
+  phone: string;
+  industry: string;
+  location: string;
+  description: string;
+  logo: string;
+  status: string;
+  isVisible: boolean;
+  memberCount: number;
+  rating: string;
+  experts?: Expert[];
+}
 
 export default function ExpertManagement() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -270,60 +106,143 @@ export default function ExpertManagement() {
   const [openExpertDropdownId, setOpenExpertDropdownId] = useState<number | null>(null);
   const [openOrgDropdownId, setOpenOrgDropdownId] = useState<number | null>(null);
   const [dropdownPosition, setDropdownPosition] = useState<{ bottom: number; right: number } | null>(null);
-    const buttonRefs = useRef<{ [key: number]: HTMLButtonElement | null }>({});
-   // Add this state at the top with your other useState declarations:
-const [openIconDropdown, setOpenIconDropdown] = useState<string | null>(null);
-const [iconDropdownPosition, setIconDropdownPosition] = useState<{ bottom: number; left: number } | null>(null);
-// Add this state with your other useState declarations:
-const [activeTab, setActiveTab] = useState<'requested' | 'verified'>('requested');
-const [anchorEl, setAnchorEl] = useState(null);
-const [activeDropdown, setActiveDropdown] = useState(null);
-const [showChangeExpertDPDialog, setShowChangeExpertDPDialog] = useState(false);
-const [showChangeExpertVideoDialog, setShowChangeExpertVideoDialog] = useState(false);
-const [showEditExpertDialog, setShowEditExpertDialog] = useState(false);
-const [showDeleteExpertDialog, setShowDeleteExpertDialog] = useState(false);
-const [showChangeOrgImageDialog, setShowChangeOrgImageDialog] = useState(false);
-const [showEditOrgDialog, setShowEditOrgDialog] = useState(false);
-const [showManageExpertsDialog, setShowManageExpertsDialog] = useState(false);
-const [showDeleteOrgDialog, setShowDeleteOrgDialog] = useState(false);
+  const buttonRefs = useRef<{ [key: number]: HTMLButtonElement | null }>({});
+  const [openIconDropdown, setOpenIconDropdown] = useState<string | null>(null);
+  const [iconDropdownPosition, setIconDropdownPosition] = useState<{ bottom: number; left: number } | null>(null);
+  const [activeTab, setActiveTab] = useState<'requested' | 'verified'>('requested');
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [activeDropdown, setActiveDropdown] = useState(null);
+  const [showChangeExpertDPDialog, setShowChangeExpertDPDialog] = useState(false);
+  const [showChangeExpertVideoDialog, setShowChangeExpertVideoDialog] = useState(false);
+  const [showEditExpertDialog, setShowEditExpertDialog] = useState(false);
+  const [showDeleteExpertDialog, setShowDeleteExpertDialog] = useState(false);
+  const [showChangeOrgImageDialog, setShowChangeOrgImageDialog] = useState(false);
+  const [showEditOrgDialog, setShowEditOrgDialog] = useState(false);
+  const [showManageExpertsDialog, setShowManageExpertsDialog] = useState(false);
+  const [showDeleteOrgDialog, setShowDeleteOrgDialog] = useState(false);
 
-// Form states
-const [expertFormData, setExpertFormData] = useState({
-  name: '',
-  phone: '',
-  email: '',
-  experience: '',
-  specialities: [] as string[],
-  rating: '',
-  bookings: ''
-});
-const [orgFormData, setOrgFormData] = useState({
-  name: '',
-  phone: '',
-  email: '',
-  address: '',
-  type: ''
-});
-const [selectedExpertFile, setSelectedExpertFile] = useState<File | null>(null);
-const [selectedExpertVideo, setSelectedExpertVideo] = useState<File | null>(null);
-const [selectedOrgImage, setSelectedOrgImage] = useState<File | null>(null);
-const [tempSpeciality, setTempSpeciality] = useState('');
+  const [expertFormData, setExpertFormData] = useState({
+    name: '',
+    phone: '',
+    email: '',
+    experience: '',
+    specialities: [] as string[],
+    rating: '',
+    bookings: ''
+  });
+  const [orgFormData, setOrgFormData] = useState({
+    name: '',
+    phone: '',
+    email: '',
+    address: '',
+    type: ''
+  });
+  const [selectedExpertFile, setSelectedExpertFile] = useState<File | null>(null);
+  const [selectedExpertVideo, setSelectedExpertVideo] = useState<File | null>(null);
+  const [selectedOrgImage, setSelectedOrgImage] = useState<File | null>(null);
+  const [tempSpeciality, setTempSpeciality] = useState('');
 
-const handleDropdownClick = (label, event) => {
-  setAnchorEl(event.currentTarget);
-  setActiveDropdown(label);
-};
+  const [organisationsData, setOrganisationsData] = useState<Organization[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [selectedOrgForDetails, setSelectedOrgForDetails] = useState<any>(null);
+  const [showCheckDetailsDialog, setShowCheckDetailsDialog] = useState(false);
+  const [detailsLoading, setDetailsLoading] = useState(false);
+  const [activeDropdownOrgId, setActiveDropdownOrgId] = useState<string | null>(null);
+  const [activeDropdownExpertId, setActiveDropdownExpertId] = useState<string | null>(null);
 
-const handleDropdownClose = () => {
-  setAnchorEl(null);
-  setActiveDropdown(null);
-};
+  const fetchOrganisations = async () => {
+    setIsLoading(true);
+    try {
+      const response = await apiClient<{ organizations: Organization[] }>('/admin/organizations');
+      setOrganisationsData(response.organizations || []);
+    } catch (error) {
+      toast.error('Failed to fetch organizations');
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-const handleOptionSelect = (label, option) => {
-  console.log(`Selected ${option} for ${label}`);
-  // Add your logic here
-  handleDropdownClose();
-};
+  useEffect(() => {
+    fetchOrganisations();
+  }, []);
+
+  const handleDropdownClick = (label: string, event: React.MouseEvent, orgId: string, expertId?: string) => {
+    setAnchorEl(event.currentTarget as any);
+    setActiveDropdown(label);
+    setActiveDropdownOrgId(orgId);
+    setActiveDropdownExpertId(expertId || null);
+  };
+
+  const handleDropdownClose = () => {
+    setAnchorEl(null);
+    setActiveDropdown(null);
+    setActiveDropdownOrgId(null);
+    setActiveDropdownExpertId(null);
+  };
+
+  const handleOptionSelect = async (label: string, option: string) => {
+    const orgId = activeDropdownOrgId;
+    const expertId = activeDropdownExpertId;
+    handleDropdownClose();
+    
+    if (!orgId) return;
+
+    try {
+      if (label === "Visibility") {
+        const isVisible = option === "Show";
+        if (expertId) {
+          await apiClient(`/admin/organizations/${orgId}/experts/${expertId}`, {
+            method: 'PUT',
+            body: JSON.stringify({ isVisible })
+          });
+          toast.success(`Expert ${isVisible ? 'shown' : 'hidden'}`);
+        } else {
+          await apiClient(`/admin/organizations/${orgId}`, {
+            method: 'PUT',
+            body: JSON.stringify({ isVisible })
+          });
+          toast.success(`Organization ${isVisible ? 'shown' : 'hidden'}`);
+        }
+      } else if (label === "Status") {
+        const status = option === "Verified" ? "VERIFIED" : "PENDING";
+        const verified = option === "Verified";
+        
+        if (expertId) {
+          await apiClient(`/admin/organizations/${orgId}/experts/${expertId}`, {
+            method: 'PUT',
+            body: JSON.stringify({ verificationStatus: status, verified })
+          });
+          toast.success(`Expert status updated to ${option}`);
+        } else {
+          await apiClient(`/admin/organizations/${orgId}`, {
+            method: 'PUT',
+            body: JSON.stringify({ verificationStatus: status, verified })
+          });
+          toast.success(`Organization status updated to ${option}`);
+        }
+      }
+      fetchOrganisations();
+    } catch (error) {
+      toast.error(`Failed to update ${label.toLowerCase()}`);
+      console.error(error);
+    }
+  };
+
+  const handleCheckDetails = async (orgId: string) => {
+    setDetailsLoading(true);
+    setShowCheckDetailsDialog(true);
+    setSelectedOrgForDetails(null);
+    try {
+      const details = await apiClient<any>(`/admin/organizations/${orgId}/check-details`);
+      setSelectedOrgForDetails(details);
+    } catch (error) {
+      toast.error('Failed to fetch organization details');
+      setShowCheckDetailsDialog(false);
+    } finally {
+      setDetailsLoading(false);
+    }
+  };
 
 
 // Add this helper function:
@@ -343,14 +262,14 @@ const toggleIconDropdown = (label: string, event: React.MouseEvent) => {
   }
 };
 
-  // Add this filtered orgs logic (replace your existing filteredOrgs):
-const filteredOrgs = organisationsData.filter(org => {
-  const matchesSearch = org.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                        org.experts.some(expert => expert.name.toLowerCase().includes(searchTerm.toLowerCase()));
-  const matchesOrg = selectedOrgFilter === 'All Organisations' || org.name === selectedOrgFilter;
-  const matchesStatus = activeTab === 'requested' ? org.status === 'Pending' : org.status === 'Active';
-  return matchesSearch && matchesOrg && matchesStatus;
-});
+  const filteredOrgs = (organisationsData || []).filter(org => {
+    const searchTermLower = searchTerm.toLowerCase();
+    const matchesSearch = org.name.toLowerCase().includes(searchTermLower) ||
+                          (org.experts && org.experts.some(expert => expert.name.toLowerCase().includes(searchTermLower)));
+    const matchesOrg = selectedOrgFilter === 'All Organisations' || org.name === selectedOrgFilter;
+    const matchesStatus = activeTab === 'requested' ? org.status === 'pending' : org.status === 'verified';
+    return matchesSearch && matchesOrg && matchesStatus;
+  });
 
 const getOptionIcon = (option) => {
   switch(option) {
@@ -535,7 +454,7 @@ const handleRemoveSpeciality = (speciality: string) => {
                     </button>
                     {organisationsData.map(org => (
                       <button
-                        key={org.id}
+                        key={org.orgId}
                         onClick={() => { setSelectedOrgFilter(org.name); setFilterOpen(false); }}
                         className="w-full text-left px-3 py-2 hover:bg-gray-50 rounded-lg text-sm"
                       >
@@ -574,34 +493,54 @@ const handleRemoveSpeciality = (speciality: string) => {
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 ">
             {filteredOrgs.map((org) => (
             <div
-                key={org.id}
+                key={org.orgId}
                 className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow"
             >
                 {/* Organisation Header */}
                 <div className="p-5 pb-3 border-b border-gray-100">
                 <div className="flex items-start gap-3">
-                    <img
-                    src={org.image}
-                    alt={org.name}
-                    className="w-12 h-12 rounded-lg object-cover"
-                    />
-                    <div className="flex-1">
-                    <div className="flex items-start justify-between">
-                        <div>
-                        <h3 className="font-semibold text-gray-900">{org.name}</h3>
-                        <div className="flex items-center gap-2 mt-0.5">
-                            <Briefcase size={12} className="text-gray-400" />
-                            <span className="text-xs text-gray-500">{org.type}</span>
+                    {org.logo ? (
+                      <img
+                        src={org.logo}
+                        alt={org.name}
+                        className="w-12 h-12 rounded-lg object-cover"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-lg">
+                        {org.name.charAt(0)}
+                      </div>
+                    )}
+                        <div className="flex-1">
+                        <div className="flex items-start justify-between">
+                            <div>
+                            <div className="flex items-center gap-2">
+                                <h3 className="font-semibold text-gray-900">{org.name}</h3>
+                                {org.isVisible === false && (
+                                    <span className="flex items-center gap-1 text-[10px] bg-red-50 text-red-600 px-1.5 py-0.5 rounded-full font-medium">
+                                        <EyeOff size={10} />
+                                        Hidden
+                                    </span>
+                                )}
+                            </div>
+                            <div className="flex items-center gap-2 mt-0.5">
+                                <Briefcase size={12} className="text-gray-400" />
+                                <span className="text-xs text-gray-500">{org.industry}</span>
+                            </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <button 
+                                    className={`p-1.5 rounded-lg transition-colors ${org.isVisible === false ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'}`}
+                                    onClick={(e) => handleDropdownClick("Visibility", e, org.orgId)}
+                                    title={org.isVisible === false ? "Show Organization" : "Hide Organization"}
+                                >
+                                    {org.isVisible === false ? <EyeOff size={16} /> : <Eye size={16} />}
+                                </button>
+                            </div>
                         </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                        
-                        </div>
-                    </div>
                     <div className="flex items-center gap-1 mt-2 justify-between">
                         <div className='flex items-center gap-1'>
-                        <span className={`flex items-center gap-1 text-xs font-medium ${org.status === "Active" ? "text-green-700" : "text-yellow-600 "} py-0.5 rounded-full`}>
-                            {org.status === "Active" ? (
+                        <span className={`flex items-center gap-1 text-xs font-medium ${org.status === "verified" ? "text-green-700" : "text-yellow-600 "} py-0.5 rounded-full capitalize`}>
+                            {org.status === "verified" ? (
                                 <CheckCircle size={10} />
                             ) : (
                                 <CircleDotIcon size={10} />
@@ -609,8 +548,8 @@ const handleRemoveSpeciality = (speciality: string) => {
                             {org.status}
                         </span>
                         </div>
-                        <button className="text-xs text-blue-600 hover:text-blue-700 font-medium" onClick={()=>(setShowExpertModal(true),setSelectedExpert(null))}>
-                            VIEW ORGANIZATION
+                        <button className="text-xs text-blue-600 hover:text-blue-700 font-medium" onClick={() => handleCheckDetails(org.orgId)}>
+                            CHECK DETAILS
                             <ChevronRight size={14} className="inline-block ml-1" />
                         </button>
                     </div>
@@ -622,25 +561,35 @@ const handleRemoveSpeciality = (speciality: string) => {
                 <div className="relative">
                 <div className="overflow-x-auto scrollbar-hide ">
                     <div className="flex gap-4 p-4 min-w-min">
-                    {org.experts.map((expert) => (
+                    {org.experts && org.experts.map((expert) => (
                         <div 
-                            key={expert.id} 
-                            className="flex-shrink-0 w-40 bg-gray-50 rounded-lg p-3 hover:shadow-md transition-shadow cursor-pointer relative"
+                            key={expert.expertId} 
+                            className="flex-shrink-0 w-44 bg-gray-50 rounded-lg p-3 hover:shadow-md transition-shadow relative"
                             >
                             <div className="relative mb-2">
-                                <img
-                                src={expert.image}
-                                alt={expert.name}
-                                className="w-16 h-16 rounded-full object-cover mx-auto"
-                                />
+                                {expert.image ? (
+                                  <img
+                                    src={expert.image}
+                                    alt={expert.name}
+                                    className="w-16 h-16 rounded-full object-cover mx-auto"
+                                  />
+                                ) : (
+                                  <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 mx-auto">
+                                    <User size={32} />
+                                  </div>
+                                )}
+                                {expert.isVisible === false && (
+                                  <div className="absolute top-0 right-0 bg-red-100 p-1 rounded-full text-red-600" title="Hidden">
+                                    <EyeOff size={10} />
+                                  </div>
+                                )}
                             </div>
 
-        
-                        <h4 className="font-medium text-gray-900 text-sm text-center truncate mt-2 hover:text-blue-600"
+                        <h4 className="font-medium text-gray-900 text-sm text-center truncate mt-2 hover:text-blue-600 cursor-pointer"
                         onClick={() => {
-                                            setSelectedExpert({ ...expert, organisation: org.name, organisationImage: org.image });
-                                            setShowExpertModal(true);
-                                        }}
+                                             setSelectedExpert({ ...expert, organisation: org.name, organisationImage: org.logo });
+                                             setShowExpertModal(true);
+                                         }}
                         >
                             {expert.name}
                         </h4>
@@ -649,13 +598,25 @@ const handleRemoveSpeciality = (speciality: string) => {
                             <Star size={10} className="text-yellow-500 fill-yellow-500" />
                             <span className="text-xs font-medium">{expert.rating}</span>
                             </div>
-                            <span className="text-xs text-gray-500">{expert.bookings}</span>
+                            <span className="text-xs text-gray-500">{expert.totalBookings} bks</span>
                             <span className="text-xs text-gray-500">{expert.experience}</span>
                         </div>
-
-                  
-                
-              
+                        
+                        <div className="flex justify-center gap-2 mt-3">
+                          <button 
+                            className={`p-1.5 rounded-lg transition-colors ${expert.isVisible === false ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'}`}
+                            onClick={(e) => handleDropdownClick("Visibility", e, org.orgId, expert.expertId)}
+                            title={expert.isVisible === false ? "Show Expert" : "Hide Expert"}
+                          >
+                            {expert.isVisible === false ? <EyeOff size={14} /> : <Eye size={14} />}
+                          </button>
+                          <button 
+                            className="p-1 hover:bg-gray-200 rounded text-gray-600"
+                            onClick={(e) => handleDropdownClick("Status", e, org.orgId, expert.expertId)}
+                          >
+                            <BadgeCheck size={14} />
+                          </button>
+                        </div>
                         </div>
                     ))}
                     </div>
@@ -703,7 +664,7 @@ const handleRemoveSpeciality = (speciality: string) => {
                         <div key={label} className="relative flex flex-col items-center group">
                             <div 
                             className='flex items-center gap-2 bg-gray-200 p-1 rounded cursor-pointer hover:bg-gray-300 transition-colors'
-                            onClick={(e) => options.length > 0 && handleDropdownClick(label, e)}
+                            onClick={(e) => options.length > 0 && handleDropdownClick(label, e, org.orgId)}
                             >
                             <Icon className="h-4 w-4 text-blue-500" />
                             <p className="text-sm font-medium">{label}</p>
@@ -1374,7 +1335,7 @@ const handleRemoveSpeciality = (speciality: string) => {
         {organisationsData
           .find(org => org.name === selectedExpert?.organisation)
           ?.experts.map((expert) => (
-            <div key={expert.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+            <div key={expert.expertId} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
               <img
                 src={expert.image}
                 alt={expert.name}
@@ -1386,7 +1347,7 @@ const handleRemoveSpeciality = (speciality: string) => {
                     <p className="font-medium text-gray-900">{expert.name}</p>
                     <div className="flex items-center gap-2 text-xs text-gray-500">
                       <span>Rating: {expert.rating} ⭐</span>
-                      <span>{expert.bookings} bookings</span>
+                      <span>{expert.totalBookings} bookings</span>
                       <span>{expert.experience}</span>
                     </div>
                   </div>
@@ -1440,6 +1401,119 @@ const handleRemoveSpeciality = (speciality: string) => {
       <Button variant="destructive" onClick={handleConfirmDeleteOrg}>
         Yes, Delete Organization
       </Button>
+    </DialogFooter>
+  </DialogContent>
+</Dialog>
+{/* Check Details Dialog */}
+<Dialog open={showCheckDetailsDialog} onOpenChange={setShowCheckDetailsDialog}>
+  <DialogContent className="max-w-2xl">
+    <DialogHeader>
+      <DialogTitle>Verification Details - {selectedOrgForDetails?.name}</DialogTitle>
+      <DialogDescription>
+        Review all filled information for this organization and its owner.
+      </DialogDescription>
+    </DialogHeader>
+    
+    {detailsLoading ? (
+      <div className="flex justify-center py-8">
+        <Loader2 className="animate-spin text-blue-600" size={32} />
+      </div>
+    ) : selectedOrgForDetails && (
+      <div className="py-4 max-h-[60vh] overflow-y-auto space-y-6">
+        {/* Completion Score */}
+        <div className="bg-gray-50 p-4 rounded-xl flex items-center justify-between">
+          <div>
+            <p className="text-sm text-gray-500">Profile Completion</p>
+            <p className="text-2xl font-bold text-gray-900">{selectedOrgForDetails.completionPercentage}%</p>
+          </div>
+          <div className="flex gap-2">
+            {selectedOrgForDetails.isProperlyFilled ? (
+              <Badge className="bg-green-100 text-green-700 hover:bg-green-200">Properly Filled</Badge>
+            ) : (
+              <Badge className="bg-yellow-100 text-yellow-700 hover:bg-yellow-200">Incomplete</Badge>
+            )}
+            <Badge className="capitalize">{selectedOrgForDetails.status}</Badge>
+          </div>
+        </div>
+
+        {/* Profile Details */}
+        <div>
+          <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+            <Building2 size={16} />
+            Organization Profile
+          </h4>
+          <div className="grid grid-cols-2 gap-4">
+            {selectedOrgForDetails.details.profile.map((field: any) => (
+              <div key={field.field} className="border-b border-gray-100 pb-2">
+                <p className="text-xs text-gray-500">{field.label}</p>
+                <p className={`text-sm ${field.value ? 'text-gray-900' : 'text-red-500 italic'}`}>
+                  {field.value || 'Not provided'}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Owner Details */}
+        <div>
+          <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+            <User size={16} />
+            Owner Details
+          </h4>
+          <div className="grid grid-cols-2 gap-4">
+            {selectedOrgForDetails.details.owner.map((field: any) => (
+              <div key={field.field} className="border-b border-gray-100 pb-2">
+                <p className="text-xs text-gray-500">{field.label}</p>
+                <p className={`text-sm ${field.value ? 'text-gray-900' : 'text-red-500 italic'}`}>
+                  {field.value || 'Not provided'}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Bank Details */}
+        <div>
+          <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+            <CreditCard size={16} />
+            Bank Details
+          </h4>
+          <div className="grid grid-cols-2 gap-4">
+            {selectedOrgForDetails.details.bank.map((field: any) => (
+              <div key={field.field} className="border-b border-gray-100 pb-2">
+                <p className="text-xs text-gray-500">{field.label}</p>
+                <p className={`text-sm ${field.value ? 'text-gray-900' : 'text-red-500 italic'}`}>
+                  {field.value || 'Not provided'}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Missing Fields Summary */}
+        {selectedOrgForDetails.missingFields.length > 0 && (
+          <div className="bg-red-50 p-4 rounded-xl border border-red-100">
+            <h4 className="text-sm font-semibold text-red-700 mb-2">Missing Required Fields</h4>
+            <ul className="list-disc list-inside text-xs text-red-600 space-y-1">
+              {selectedOrgForDetails.missingFields.map((label: string) => (
+                <li key={label}>{label}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+    )}
+
+    <DialogFooter>
+      <Button variant="outline" onClick={() => setShowCheckDetailsDialog(false)}>Close</Button>
+      {!selectedOrgForDetails?.isProperlyFilled && (
+        <Button onClick={() => toast.info('Reminder sent to organization')}>Send Reminder</Button>
+      )}
+      {selectedOrgForDetails?.isProperlyFilled && selectedOrgForDetails?.status !== 'VERIFIED' && (
+        <Button className="bg-green-600 hover:bg-green-700" onClick={() => handleOptionSelect('Status', 'Verified')}>
+          Approve Now
+        </Button>
+      )}
     </DialogFooter>
   </DialogContent>
 </Dialog>
