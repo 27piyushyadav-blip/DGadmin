@@ -305,8 +305,9 @@ const handleConfirmChangeVideo = async () => {
 
 // Add these handler functions
 const handleChangeMenu = () => {
+  if (!selectedOrgData?.orgId) return;
   setShowActionPanel(false);
-  setShowChangeMenuDialog(true);
+  router.push(`/admin/organizations/manage/${selectedOrgData.orgId}/edit`);
 };
 
 const handleChangeActiveHours = () => {
