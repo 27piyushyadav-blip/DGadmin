@@ -1,7 +1,7 @@
 # =========================
 # BUILD STAGE
 # =========================
-FROM node:20-alpine AS builder
+FROM node:24-alpine AS builder
 
 WORKDIR /app
 
@@ -17,7 +17,7 @@ RUN npm run build
 # =========================
 # DISTROLESS PRODUCTION
 # =========================
-FROM gcr.io/distroless/nodejs20-debian12
+FROM gcr.io/distroless/nodejs24-debian12
 
 WORKDIR /app
 
