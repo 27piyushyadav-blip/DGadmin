@@ -34,18 +34,56 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  const decodeTokenUser = (token: string | null): User | null => {
+    if (!token) return null;
+    try {
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(
+        window
+          .atob(base64)
+          .split('')
+          .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+          .join('')
+      );
+      const decoded = JSON.parse(jsonPayload);
+      
+      // Enforce presence of real database-defined fields
+      if (!decoded || !decoded.email || !decoded.sub) {
+        return null;
+      }
+      
+      return {
+        id: decoded.sub,
+        email: decoded.email,
+        name: decoded.name || decoded.email.split('@')[0],
+        role: decoded.role || "admin",
+      };
+    } catch (error) {
+      console.error("Failed to decode auth token", error);
+      return null;
+    }
+  };
+
   const checkAuth = async () => {
     try {
       if (isAuthenticated()) {
-        // User has tokens, consider them authenticated
-        // You might want to validate the token with the backend here
-        setUser({ 
-          id: "authenticated", 
-          email: "admin@example.com" 
-        });
+        const token = getAccessToken();
+        const decodedUser = decodeTokenUser(token);
+        if (decodedUser) {
+          setUser(decodedUser);
+        } else {
+          // Token is corrupt/invalid, clear local session to trigger redirect
+          localStorage.removeItem("access_token");
+          localStorage.removeItem("refresh_token");
+          setUser(null);
+        }
+      } else {
+        setUser(null);
       }
     } catch (error) {
       console.error("Auth check failed:", error);
+      setUser(null);
     } finally {
       setIsLoading(false);
     }
@@ -63,11 +101,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (identifier: string, password: string) => {
     setIsLoading(true);
     try {
-      await loginUserApi({ identifier, password });
-      setUser({ 
-        id: "authenticated", 
-        email: identifier 
-      });
+      const response = await loginUserApi({ identifier, password });
+      const decodedUser = decodeTokenUser(response.access_token);
+      if (decodedUser) {
+        setUser(decodedUser);
+      } else {
+        setUser({ 
+          id: "authenticated", 
+          email: identifier 
+        });
+      }
     } catch (error) {
       if (error instanceof AuthError) {
         throw error;
