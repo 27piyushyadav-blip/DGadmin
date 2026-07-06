@@ -629,8 +629,8 @@ export default function OrganizationExpertsPage() {
                         </div>
                         <div className="text-right">
                           <div className="space-y-1">
-                            <div className="text-xs font-bold text-gray-800">₹{service.videoPrice || service.price?.video} <span className="text-[10px] text-gray-400 font-normal uppercase ml-1">Video</span></div>
-                            <div className="text-xs font-bold text-gray-800">₹{service.clinicPrice || service.price?.clinic} <span className="text-[10px] text-gray-400 font-normal uppercase ml-1">Clinic</span></div>
+                            <div className="text-xs font-bold text-gray-800">${service.videoPrice || service.price?.video} <span className="text-[10px] text-gray-400 font-normal uppercase ml-1">Video</span></div>
+                            <div className="text-xs font-bold text-gray-800">${service.clinicPrice || service.price?.clinic} <span className="text-[10px] text-gray-400 font-normal uppercase ml-1">Clinic</span></div>
                           </div>
                         </div>
                       </div>
@@ -1013,7 +1013,7 @@ export default function OrganizationExpertsPage() {
                           </div>
                           <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                              <label className="text-[10px] font-bold text-gray-500 uppercase">Video Fee (INR)</label>
+                              <label className="text-[10px] font-bold text-gray-500 uppercase">Video Fee (AUD)</label>
                               <input
                                 type="number"
                                 value={service.videoPrice || service.price?.video || 0}
@@ -1026,7 +1026,7 @@ export default function OrganizationExpertsPage() {
                               />
                             </div>
                             <div className="space-y-2">
-                              <label className="text-[10px] font-bold text-gray-500 uppercase">Clinic Fee (INR)</label>
+                              <label className="text-[10px] font-bold text-gray-500 uppercase">Clinic Fee (AUD)</label>
                               <input
                                 type="number"
                                 value={service.clinicPrice || service.price?.clinic || 0}

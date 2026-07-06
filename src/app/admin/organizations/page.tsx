@@ -9,7 +9,7 @@ import { apiClient } from "@/client/api/api-client";
 import type { TableColumn, Organization } from "@/types/admin";
 import { toast } from "sonner";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
 
 const columns: TableColumn<Organization>[] = [
   {

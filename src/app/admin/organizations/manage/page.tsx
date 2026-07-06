@@ -540,9 +540,9 @@ const handleSelectReview = (id: string) => {
                   <div className="flex items-start gap-4">
                     <img
                       src={
-                        org.logo ? (org.logo.startsWith('http') ? org.logo : `http://localhost:3000/uploads/organization-logos/${org.logo}`) :
-                        org.logoUrl ? (org.logoUrl.startsWith('http') ? org.logoUrl : `http://localhost:3000/uploads/organization-logos/${org.logoUrl}`) :
-                        org.image ? (org.image.startsWith('http') ? org.image : `http://localhost:3000/uploads/organization-logos/${org.image}`) :
+                        org.logo ? (org.logo.startsWith('http') ? org.logo : `${process.env.NEXT_PUBLIC_API_URL}/uploads/organization-logos/${org.logo}`) :
+                        org.logoUrl ? (org.logoUrl.startsWith('http') ? org.logoUrl : `${process.env.NEXT_PUBLIC_API_URL}/uploads/organization-logos/${org.logoUrl}`) :
+                        org.image ? (org.image.startsWith('http') ? org.image : `${process.env.NEXT_PUBLIC_API_URL}/uploads/organization-logos/${org.image}`) :
                         'https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=100&h=100&fit=crop'
                       }
                       alt={org.name || 'Organization'}
@@ -649,7 +649,7 @@ const handleSelectReview = (id: string) => {
                         </div>
                         <div className="flex items-center gap-1">
                           <Wallet size={14} className="text-gray-400" />
-                          <span className="text-sm font-medium">₹{org.earnings || 0}</span>
+                          <span className="text-sm font-medium">${org.earnings || 0}</span>
                         </div>
                         <div className="flex items-center gap-1">
                           <Users size={14} className="text-gray-400" />
@@ -1080,7 +1080,7 @@ const handleSelectReview = (id: string) => {
               placeholder="Item name"
             />
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">₹</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
                 <input
                   type="number"
                   value={item.basePrice || item.price}
